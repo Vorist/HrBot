@@ -1,0 +1,5 @@
+🔁 Запуск повного циклу навчання бота... 
+🔄 Конвертація TXT → JSONL 
+  3    C:\Users\acer\Documents\project\data\real_dialogs.jsonl
+  13  .
+  13   C:\Users\acer\Documents\project\vectorstore\knowledge_faiss.index

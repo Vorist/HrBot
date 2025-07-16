@@ -1,0 +1,14 @@
+🔁 Запуск повного циклу навчання бота... 
+🔄 Крок 1: Конвертація TXT → JSONL 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\scripts\convert_real_dialogs.py", line 106, in <module>
+    convert()
+    ~~~~~~~^^
+  File "C:\Users\acer\Documents\project\scripts\convert_real_dialogs.py", line 103, in convert
+    print(f"\u2705 ������ {len(new_items)} ����� ������ \u2192 {REAL_DIALOGS_PATH}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\acer\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1251.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+🔄 Крок 2: Побудова knowledge_chunks  

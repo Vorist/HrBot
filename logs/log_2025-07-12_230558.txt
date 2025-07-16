@@ -1,0 +1,9 @@
+🔁 Запуск повного циклу навчання бота... 
+🔄 Крок 1: Конвертація TXT → JSONL 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\scripts\convert_real_dialogs.py", line 11, in <module>
+    from utils import log
+  File "C:\Users\acer\Documents\project\utils.py", line 21, in <module>
+    from utils.real_dialog_loader import load_real_dialogs_from_txt
+ModuleNotFoundError: No module named 'utils.real_dialog_loader'; 'utils' is not a package
+🔄 Крок 2: Побудова knowledge_chunks  

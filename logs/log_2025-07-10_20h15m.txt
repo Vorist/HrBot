@@ -1,0 +1,125 @@
+рџ”Ѓ [START] Р—Р°РїСѓСЃРє РїРѕРІРЅРѕРіРѕ С†РёРєР»Сѓ РЅР°РІС‡Р°РЅРЅСЏ Р±РѕС‚Р° - 10.07.2025 20:15:01,59 
+вњ… Р’С–СЂС‚СѓР°Р»СЊРЅРµ СЃРµСЂРµРґРѕРІРёС‰Рµ Р°РєС‚РёРІРѕРІР°РЅРѕ 
+рџ“љ РџРѕР±СѓРґРѕРІР° knowledge_chunks... 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\trainer\build_knowledge_chunks.py", line 128, in <module>
+    build_knowledge_chunks()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\acer\Documents\project\trainer\build_knowledge_chunks.py", line 100, in build_knowledge_chunks
+    print(f"\U0001f4e5 Отримано {len(chunks)} фрагментів знань.")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\acer\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1251.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4e5' in position 0: character maps to <undefined>
+рџ’¬ РџРѕР±СѓРґРѕРІР° dialog_chunks... 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\trainer\build_dialog_chunks.py", line 97, in <module>
+    build_dialog_chunks()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\acer\Documents\project\trainer\build_dialog_chunks.py", line 84, in build_dialog_chunks
+    print("\u26a0\ufe0f Нових фрагментів не знайдено.")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\acer\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1251.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-1: character maps to <undefined>
+рџ“ќ РћР±СЂРѕР±РєР° feedback-РєРѕРјРµРЅС‚Р°СЂС–РІ... 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\trainer\feedback_processor.py", line 8, in <module>
+    from utils import log
+  File "C:\Users\acer\Documents\project\utils.py", line 9, in <module>
+    from config import (
+    ...<8 lines>...
+    )
+ImportError: cannot import name 'REAL_INDEX_PATH' from 'config' (C:\Users\acer\Documents\project\config.py). Did you mean: 'BAD_INDEX_PATH'?
+вњ… РЎС‚РІРѕСЂРµРЅРЅСЏ FAISS-С–РЅРґРµРєСЃСѓ РґР»СЏ good... 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\vectorstore\build_good_index.py", line 41, in embed_texts
+    print(f"\U0001f4e1 Генеруємо embedding-и для {len(texts)} good-фрагментів...")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\acer\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1251.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4e1' in position 0: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\vectorstore\build_good_index.py", line 80, in <module>
+    build_good_index()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\acer\Documents\project\vectorstore\build_good_index.py", line 65, in build_good_index
+    embeddings = embed_texts(texts)
+  File "C:\Users\acer\Documents\project\vectorstore\build_good_index.py", line 55, in embed_texts
+    print(f"\u274c Помилка генерації ембедінгів: {e}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\acer\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1251.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u274c' in position 0: character maps to <undefined>
+вќЊ РЎС‚РІРѕСЂРµРЅРЅСЏ FAISS-С–РЅРґРµРєСЃСѓ РґР»СЏ bad... 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\vectorstore\build_bad_index.py", line 41, in embed_texts
+    print(f"\U0001f4e1 Генеруємо embedding-и для {len(texts)} bad-фрагментів...")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\acer\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1251.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4e1' in position 0: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\vectorstore\build_bad_index.py", line 80, in <module>
+    build_bad_index()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\acer\Documents\project\vectorstore\build_bad_index.py", line 65, in build_bad_index
+    embeddings = embed_texts(texts)
+  File "C:\Users\acer\Documents\project\vectorstore\build_bad_index.py", line 55, in embed_texts
+    print(f"\u274c Помилка генерації ембедінгів: {e}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\acer\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1251.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u274c' in position 0: character maps to <undefined>
+рџ§  РЎС‚РІРѕСЂРµРЅРЅСЏ FAISS-С–РЅРґРµРєСЃСѓ РґР»СЏ knowledge... 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\vectorstore\build_knowledge_index.py", line 57, in <module>
+    build_index()
+    ~~~~~~~~~~~^^
+  File "C:\Users\acer\Documents\project\vectorstore\build_knowledge_index.py", line 54, in build_index
+    print(f"\u2705 Успішно збережено FAISS-індекс з {len(vectors)} знань \u2192 {KNOWLEDGE_INDEX_PATH}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\acer\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1251.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+рџ§Є РџРµСЂРµС„РѕСЂРјСѓР»СЋРІР°РЅРЅСЏ РїРѕРіР°РЅРёС… СЂРµРїР»С–Рє... 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\trainer\strategy_refiner.py", line 10, in <module>
+    from utils import split_dialog_into_chunks, log
+  File "C:\Users\acer\Documents\project\trainer/..\utils.py", line 9, in <module>
+    from config import (
+    ...<8 lines>...
+    )
+ImportError: cannot import name 'REAL_INDEX_PATH' from 'config' (C:\Users\acer\Documents\project\trainer/..\config.py). Did you mean: 'BAD_INDEX_PATH'?
+рџ§  РќР°РІС‡Р°РЅРЅСЏ Р±РѕС‚Р° РЅР° РІСЃС–С… РґР¶РµСЂРµР»Р°С…... 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\trainer\learner.py", line 14, in <module>
+    from utils import split_dialog_into_chunks, log
+  File "C:\Users\acer\Documents\project\utils.py", line 9, in <module>
+    from config import (
+    ...<8 lines>...
+    )
+ImportError: cannot import name 'REAL_INDEX_PATH' from 'config' (C:\Users\acer\Documents\project\config.py). Did you mean: 'BAD_INDEX_PATH'?
+рџљЂ Р—Р°РїСѓСЃРє Р±РѕС‚Р°... 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\bot.py", line 13, in <module>
+    from utils import build_messages, get_openai_response, log, detect_source
+  File "C:\Users\acer\Documents\project\utils.py", line 9, in <module>
+    from config import (
+    ...<8 lines>...
+    )
+ImportError: cannot import name 'REAL_INDEX_PATH' from 'config' (C:\Users\acer\Documents\project\config.py). Did you mean: 'BAD_INDEX_PATH'?
+вњ… [END] РќР°РІС‡Р°РЅРЅСЏ Р·Р°РІРµСЂС€РµРЅРѕ - 10.07.2025 20:15:13,02 

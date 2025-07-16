@@ -1,0 +1,12 @@
+рџ”Ѓ Р—Р°РїСѓСЃРє РїРѕРІРЅРѕРіРѕ С†РёРєР»Сѓ РЅР°РІС‡Р°РЅРЅСЏ Р±РѕС‚Р°... 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\trainer\build_knowledge_chunks.py", line 128, in <module>
+    build_knowledge_chunks()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\acer\Documents\project\trainer\build_knowledge_chunks.py", line 100, in build_knowledge_chunks
+    print(f"\U0001f4e5 Отримано {len(chunks)} фрагментів знань.")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\acer\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1251.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4e5' in position 0: character maps to <undefined>

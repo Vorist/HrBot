@@ -1,0 +1,26 @@
+🔁 Запуск повного циклу навчання бота... 
+🔄 Конвертація TXT → JSONL 
+  3   C:\Users\acer\Documents\project\data\real_dialogs.jsonl
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\trainer\build_knowledge_chunks.py", line 8, in <module>
+    from openai import OpenAI
+  File "C:\Users\acer\Documents\project\venv\Lib\site-packages\openai\__init__.py", line 9, in <module>
+    from . import types
+  File "C:\Users\acer\Documents\project\venv\Lib\site-packages\openai\types\__init__.py", line 5, in <module>
+    from .batch import Batch as Batch
+  File "C:\Users\acer\Documents\project\venv\Lib\site-packages\openai\types\batch.py", line 6, in <module>
+    from .._models import BaseModel
+  File "C:\Users\acer\Documents\project\venv\Lib\site-packages\openai\_models.py", line 36, in <module>
+    from ._utils import (
+    ...<14 lines>...
+    )
+  File "C:\Users\acer\Documents\project\venv\Lib\site-packages\openai\_utils\__init__.py", line 2, in <module>
+    from ._sync import asyncify as asyncify
+  File "C:\Users\acer\Documents\project\venv\Lib\site-packages\openai\_utils\_sync.py", line 4, in <module>
+    import asyncio
+  File "C:\Users\acer\AppData\Local\Programs\Python\Python313\Lib\asyncio\__init__.py", line 43, in <module>
+    from .windows_events import *
+  File "C:\Users\acer\AppData\Local\Programs\Python\Python313\Lib\asyncio\windows_events.py", line 8, in <module>
+    import _overlapped
+KeyboardInterrupt
+^C^C
