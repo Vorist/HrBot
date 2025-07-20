@@ -1,4 +1,3 @@
-// frontend/src/components/FeedbackTab.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,61 +54,71 @@ export default function FeedbackTab() {
     <div className="space-y-4">
       <h2 className="text-xl font-bold">💬 Фідбек по діалогам</h2>
 
-      {feedbacks.map((item, index) => (
-        <Card
-          key={index}
-          onClick={() => setSelectedIndex(index)}
-          className={
-            selectedIndex === index
-              ? "highlighted-card"
-              : "default-card"
-          }
-        >
-          <CardContent>
-            <p className="text-sm whitespace-pre-wrap">
-              <strong>📄 Діалог:</strong>
-              <br />
-              {item.dialog}
-            </p>
+      {feedbacks.map((item, index) => {
+        const isSelected = selectedIndex === index;
+        const hasComment = !!item.comment?.trim();
+        const dialogText = Array.isArray(item.dialog)
+          ? item.dialog.map((d) => `${d.role === "user" ? "👤" : "🤖"} ${d.text}`).join("\n")
+          : typeof item.dialog === "string"
+          ? item.dialog
+          : "⚠️ Невідомий формат діалогу";
 
-            {item.comment && (
-              <p className="text-sm">
-                <strong>💬 Коментар:</strong>
+        return (
+          <Card
+            key={index}
+            onClick={() => setSelectedIndex(index)}
+            className={`cursor-pointer ${isSelected ? "highlighted-card" : "default-card"}`}
+          >
+            <CardContent className="space-y-2">
+              <div className="text-sm whitespace-pre-wrap">
+                <strong>📄 Діалог:</strong>
                 <br />
-                {item.comment}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+                {dialogText}
+              </div>
 
-      {selectedIndex !== null && (
-        <div className="card">
-          <Textarea
-            ref={textareaRef}
-            value={newFeedback}
-            onChange={(e) => setNewFeedback(e.target.value)}
-            placeholder="✍️ Напиши новий коментар до діалогу"
-          />
-          <div className="flex gap-2 justify-end mt-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSelectedIndex(null);
-                setNewFeedback("");
-              }}
-            >
-              Скасувати
-            </Button>
-            <Button
-              onClick={handleSendFeedback}
-              disabled={!newFeedback.trim()}
-            >
-              💾 Зберегти фідбек
-            </Button>
-          </div>
-        </div>
-      )}
+              {item.status && (
+                <div className="text-xs text-muted-foreground italic">
+                  🏷 Статус: {item.status}
+                </div>
+              )}
+
+              {hasComment && !isSelected && (
+                <div className="text-xs text-green-600 font-semibold">
+                  💬 Коментар збережено
+                </div>
+              )}
+
+              {isSelected && (
+                <>
+                  <Textarea
+                    ref={textareaRef}
+                    value={newFeedback}
+                    onChange={(e) => setNewFeedback(e.target.value)}
+                    placeholder="✍️ Напиши новий коментар до діалогу"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedIndex(null);
+                        setNewFeedback("");
+                      }}
+                    >
+                      Скасувати
+                    </Button>
+                    <Button
+                      onClick={handleSendFeedback}
+                      disabled={!newFeedback.trim()}
+                    >
+                      💾 Зберегти фідбек
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

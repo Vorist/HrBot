@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 export default function StrategiesTab() {
   const [strategies, setStrategies] = useState([]);
@@ -10,63 +11,82 @@ export default function StrategiesTab() {
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef(null);
 
+  // ⏬ Завантаження стратегій
   const fetchStrategies = async () => {
     try {
       const res = await fetch("/api/strategies");
+      if (!res.ok) throw new Error("Не вдалося завантажити стратегії");
       const data = await res.json();
       setStrategies(data);
     } catch (e) {
-      console.error("Помилка завантаження стратегій:", e);
+      toast.error(e.message || "⚠️ Помилка при завантаженні стратегій");
     }
   };
 
+  // ⏫ Збереження зміненої відповіді
   const saveEdited = async (index) => {
-    if (!editedText.trim()) return;
+    if (!editedText.trim()) {
+      toast.error("⚠️ Поле не може бути порожнім");
+      return;
+    }
 
     setSaving(true);
-    await fetch("/api/strategies/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ index, improved: editedText }),
-    });
+    try {
+      const res = await fetch("/api/strategies/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ index, improved: editedText }),
+      });
 
-    setEditingIndex(null);
-    setEditedText("");
-    await fetchStrategies();
-    setSaving(false);
+      if (!res.ok) throw new Error("Не вдалося зберегти відповідь");
+
+      toast.success("✅ Відповідь збережено");
+      setEditingIndex(null);
+      setEditedText("");
+      await fetchStrategies();
+    } catch (err) {
+      toast.error(err.message || "❌ Помилка при збереженні");
+    } finally {
+      setSaving(false);
+    }
   };
 
+  // 🔁 Ініціалізація
   useEffect(() => {
     fetchStrategies();
   }, []);
 
+  // 🎯 Автофокус при редагуванні
   useEffect(() => {
-    if (textareaRef.current) {
+    if (editingIndex !== null && textareaRef.current) {
       textareaRef.current.focus();
     }
   }, [editingIndex]);
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">📈 Стратегії</h2>
+      <h2 className="text-xl font-semibold">📈 Стратегії покращення</h2>
 
       {strategies.map((item, index) => (
         <Card key={index} className="border border-muted">
-          <CardContent className="space-y-3 py-4">
+          <CardContent className="space-y-4 py-4">
+            {/* 📌 Контекст */}
             <div>
-              <span className="font-semibold">Контекст:</span>
+              <span className="font-semibold">📌 Контекст:</span>
               <p className="text-sm whitespace-pre-wrap">{item.context}</p>
             </div>
 
+            {/* 🤖 Початкова відповідь */}
             <div>
-              <span className="font-semibold">Було (🤖):</span>
-              <p className="text-red-600 whitespace-pre-wrap">
+              <span className="font-semibold">🤖 Було:</span>
+              <p className="text-sm text-red-600 whitespace-pre-wrap">
                 {item.original}
               </p>
             </div>
 
+            {/* ✅ Покращена відповідь */}
             <div>
-              <span className="font-semibold">Стало:</span>
+              <span className="font-semibold">✅ Стало:</span>
               {editingIndex === index ? (
                 <>
                   <Textarea
@@ -82,7 +102,7 @@ export default function StrategiesTab() {
                       onClick={() => saveEdited(index)}
                       disabled={saving || !editedText.trim()}
                     >
-                      {saving ? "Збереження..." : "Зберегти"}
+                      {saving ? "Збереження..." : "💾 Зберегти"}
                     </Button>
                     <Button
                       size="sm"
@@ -98,8 +118,10 @@ export default function StrategiesTab() {
                 </>
               ) : (
                 <div className="flex justify-between items-start mt-1">
-                  <span className="whitespace-pre-wrap text-sm">
-                    {item.improved || "—"}
+                  <span className="whitespace-pre-wrap text-sm text-green-700">
+                    {item.improved?.trim()
+                      ? item.improved
+                      : "— (ще не редаговано)"}
                   </span>
                   <Button
                     size="sm"

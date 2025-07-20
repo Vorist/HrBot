@@ -1,24 +1,41 @@
-/* 🌐 Загальні стилі */
+/* 🌐 Базові стилі */
+:root {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1e40af;
+  --color-bg: #f7f7f7;
+  --color-text: #222;
+  --color-card: #fff;
+  --color-border: #ddd;
+  --color-muted: #6b7280;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   padding: 0;
-  background-color: #f7f7f7;
-  color: #222;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
   line-height: 1.6;
+  font-size: 16px;
 }
 
 /* 🧾 Заголовки */
 h1, h2, h3 {
   margin-bottom: 1rem;
   color: #111;
+  font-weight: 600;
 }
 
-/* 🔘 Універсальні кнопки */
+/* 🔘 Кнопки */
 button {
   padding: 0.4rem 0.8rem;
-  background-color: #2563eb;
-  color: #fff;
+  background-color: var(--color-primary);
+  color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -27,7 +44,7 @@ button {
 }
 
 button:hover {
-  background-color: #1e40af;
+  background-color: var(--color-primary-dark);
 }
 
 button:disabled {
@@ -35,28 +52,47 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* 📝 Текстове поле */
+/* 📝 Поля вводу */
 textarea, input, select {
   width: 100%;
   padding: 0.5rem;
   border-radius: 6px;
   border: 1px solid #ccc;
-  resize: vertical;
   font-family: inherit;
   font-size: 0.95rem;
+  resize: vertical;
+}
+
+textarea:focus,
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
 /* 🃏 Картки */
-.card {
-  background: #fff;
-  border: 1px solid #ddd;
+.card, .default-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* 🧩 Flex */
+.highlighted-card {
+  border: 2px solid var(--color-primary);
+  background-color: #eff6ff;
+}
+
+/* ✨ Hover-карта */
+.card-hover:hover {
+  background-color: #f9fafb;
+  cursor: pointer;
+}
+
+/* 🔀 Flex */
 .flex {
   display: flex;
 }
@@ -67,11 +103,12 @@ textarea, input, select {
   align-items: center;
 }
 
-/* 📑 Стилізація перемикача вкладок */
+/* 📑 Вкладки */
 .tab-switcher {
   display: flex;
   gap: 1rem;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
 }
 
 .tab-switcher button {
@@ -80,11 +117,11 @@ textarea, input, select {
 }
 
 .tab-switcher button.active {
-  background-color: #2563eb;
-  color: #fff;
+  background-color: var(--color-primary);
+  color: white;
 }
 
-/* 🟦 Кнопки вкладок */
+/* 🟦 Кнопка вкладки */
 .tab-button {
   padding: 0.5rem 1rem;
   font-weight: 600;
@@ -108,7 +145,7 @@ textarea, input, select {
   color: black;
 }
 
-/* 🏷️ Бейджі */
+/* 🏷️ Бейдж */
 .badge {
   display: inline-block;
   padding: 0.2rem 0.5rem;
@@ -129,25 +166,50 @@ textarea, input, select {
   white-space: pre-wrap;
 }
 
-/* ✅ Зелене повідомлення */
 .message.success {
   background: #dcfce7;
   color: #166534;
 }
 
-/* ❌ Червоне повідомлення */
 .message.error {
   background: #fee2e2;
   color: #991b1b;
 }
 
-/* ⚠️ Жовте повідомлення */
 .message.warning {
   background: #fef9c3;
   color: #92400e;
 }
 
-/* 📱 Адаптивність */
+/* 🔽 Scroll-зони */
+.scroll-box {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+/* 🖱️ Drag-зона */
+.draggable {
+  cursor: grab;
+}
+
+.draggable:active {
+  cursor: grabbing;
+}
+
+/* 💡 Додаткові */
+.dialog-container {
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+}
+
+.glow {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* 📱 Адаптив */
 @media (max-width: 600px) {
   .tab-switcher {
     flex-direction: column;
@@ -155,5 +217,9 @@ textarea, input, select {
 
   button {
     width: 100%;
+  }
+
+  .scroll-box {
+    max-height: 200px;
   }
 }

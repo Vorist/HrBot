@@ -12,7 +12,9 @@ if not exist logs (
 )
 
 :: 🕒 Створення унікального лог-файлу
-set LOG_FILE=logs\ui_log_%date:~6,4%-%date:~3,2%-%date:~0,2%_%time:~0,2%h%time:~3,2%m.txt
+set NOW=%time::=m%
+set NOW=%NOW: =0%
+set LOG_FILE=logs\ui_log_%date:~6,4%-%date:~3,2%-%date:~0,2%_%NOW:~0,2%h%NOW:~2,2%m.txt
 echo [START] %date% %time% > "%LOG_FILE%"
 
 :: 📍 Перехід у корінь проєкту
@@ -29,11 +31,11 @@ if exist venv\Scripts\activate.bat (
     exit /b
 )
 
-:: 📦 Запуск FastAPI бекенду
+:: 🔄 Запуск бекенду
 echo 🔄 Запуск бекенду (uvicorn)... >> "%LOG_FILE%"
 start "📦 BACKEND" cmd /k "cd backend && uvicorn main:app --reload --port 8000"
 
-:: 🌐 Перевірка frontend\package.json
+:: 🌐 Перевірка frontend
 if not exist frontend\package.json (
     echo ❌ Відсутній frontend\package.json >> "%LOG_FILE%"
     echo 💡 Перейди: cd frontend && npm install >> "%LOG_FILE%"
@@ -41,11 +43,11 @@ if not exist frontend\package.json (
     exit /b
 )
 
-:: 🌐 Запуск фронтенду (Vite)
+:: 🌐 Запуск фронтенду
 echo 🌐 Запуск фронтенду (npm run dev)... >> "%LOG_FILE%"
 start "🌐 FRONTEND" cmd /k "cd frontend && npm run dev"
 
-:: 🧠 Запуск Feedback UI (Streamlit)
+:: 🧠 Запуск Feedback UI
 if exist feedback_ui\app.py (
     echo 🧠 Запуск Feedback UI... >> "%LOG_FILE%"
     start "🧠 FEEDBACK_UI" cmd /k "cd feedback_ui && streamlit run app.py"
@@ -53,7 +55,7 @@ if exist feedback_ui\app.py (
     echo ⚠️ Не знайдено feedback_ui\app.py — пропущено >> "%LOG_FILE%"
 )
 
-:: 🌍 Автовідкриття фронтенду
+:: 🌍 Автовідкриття браузера
 timeout /t 4 >nul
 start http://localhost:5173
 

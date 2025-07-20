@@ -1,13 +1,14 @@
-// frontend/src/components/GoodDialogsTab.jsx
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 export default function GoodDialogsTab() {
   const [dialogs, setDialogs] = useState([]);
-  const [newDialog, setNewDialog] = useState("");
+  const [newDialogText, setNewDialogText] = useState("");
+  const [newUserName, setNewUserName] = useState("");
   const [comment, setComment] = useState({});
   const [expanded, setExpanded] = useState({});
   const [training, setTraining] = useState(false);
@@ -15,7 +16,7 @@ export default function GoodDialogsTab() {
   useEffect(() => {
     fetch("/api/good_dialogs")
       .then((res) => res.json())
-      .then((data) => setDialogs(data))
+      .then(setDialogs)
       .catch(() => toast.error("❌ Не вдалося завантажити good-діалоги"));
   }, []);
 
@@ -24,58 +25,54 @@ export default function GoodDialogsTab() {
   };
 
   const handleMarkBad = async (index) => {
-    const dialog = dialogs[index];
-    const text = dialog.text;
     const feedback = comment[index] || "";
 
     try {
-      await fetch("/api/bad_dialogs", {
+      await fetch("/api/good_dialogs/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-
-      await fetch(`/api/good_dialogs/${index}`, {
-        method: "DELETE",
-      });
-
-      await fetch("/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text,
-          comment: feedback,
-          status: "negative",
-          source: "good_dialogs",
-        }),
+        body: JSON.stringify({ index, comment: feedback }),
       });
 
       setDialogs((prev) => prev.filter((_, i) => i !== index));
-      toast.success("❌ Перенесено в погані + фідбек збережено");
-    } catch (err) {
-      toast.error("❌ Помилка при перенесенні або збереженні фідбеку");
+      toast.success("✅ Перенесено в bad + фідбек збережено");
+    } catch {
+      toast.error("❌ Помилка при перенесенні або фідбеці");
     }
   };
 
   const handleAdd = async () => {
-    const dialog = newDialog.trim();
-    if (!dialog) return;
+    const user = newUserName.trim() || "Кандидат";
+    const lines = newDialogText.trim().split("\n").filter(Boolean);
+
+    const dialog = lines
+      .map((line) => {
+        if (line.startsWith("👤")) return { role: "user", text: line.slice(2).trim() };
+        if (line.startsWith("🤖")) return { role: "bot", text: line.slice(2).trim() };
+        return null;
+      })
+      .filter(Boolean);
+
+    if (!dialog.length) {
+      toast.error("⚠️ Діалог порожній або неправильний формат");
+      return;
+    }
 
     try {
       const res = await fetch("/api/good_dialogs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: dialog }),
+        body: JSON.stringify({ user, dialog }),
       });
 
-      if (!res.ok) throw new Error("❌ Неможливо додати");
-
+      if (!res.ok) throw new Error();
       const data = await res.json();
       setDialogs((prev) => [...prev, data]);
-      setNewDialog("");
-      toast.success("✅ Діалог додано");
+      setNewDialogText("");
+      setNewUserName("");
+      toast.success("✅ Додано в good");
     } catch {
-      toast.error("❌ Помилка при додаванні good-діалогу");
+      toast.error("❌ Помилка при додаванні діалогу");
     }
   };
 
@@ -84,7 +81,6 @@ export default function GoodDialogsTab() {
     try {
       const res = await fetch("/api/training/good", { method: "POST" });
       const log = await res.text();
-
       if (res.ok) {
         toast.success("🧠 Навчання завершено");
         console.log(log);
@@ -109,29 +105,29 @@ export default function GoodDialogsTab() {
       </div>
 
       {dialogs.map((dialog, index) => {
-        const lines = dialog.text.split("\n");
-        const firstUserLine = lines.find((l) => l.startsWith("👤")) || "";
-        const meta = firstUserLine.slice(2, 50).split("—");
-
-        const name = meta[0]?.trim() || "Кандидат";
-        const date = meta[1]?.trim() || "Без дати";
+        const isExpanded = expanded[index];
+        const dialogText = dialog.dialog
+          .map((msg) => `${msg.role === "user" ? "👤" : "🤖"} ${msg.text}`)
+          .join("\n");
 
         return (
           <Card key={index}>
             <CardContent className="space-y-2">
               <div
-                className="cursor-pointer text-sm font-semibold text-primary"
+                className="cursor-pointer text-sm font-semibold"
                 onClick={() => toggleExpand(index)}
               >
-                👤 {name} — 📅 {date} {expanded[index] ? "▲" : "▼"}
+                👤 {dialog.user} — 📅 {dialog.date} {isExpanded ? "▲" : "▼"}
               </div>
 
-              {expanded[index] && (
+              {isExpanded && (
                 <>
-                  <pre className="whitespace-pre-wrap text-sm">{dialog.text}</pre>
+                  <pre className="whitespace-pre-wrap text-sm">
+                    {dialogText}
+                  </pre>
 
                   <Textarea
-                    placeholder="✍️ Ваш коментар (необов'язково)"
+                    placeholder="✍️ Ваш коментар"
                     value={comment[index] || ""}
                     onChange={(e) =>
                       setComment({ ...comment, [index]: e.target.value })
@@ -153,9 +149,14 @@ export default function GoodDialogsTab() {
       })}
 
       <div className="flex flex-col gap-2 mt-4">
+        <Input
+          value={newUserName}
+          onChange={(e) => setNewUserName(e.target.value)}
+          placeholder="Ім’я кандидата (необов’язково)"
+        />
         <Textarea
-          value={newDialog}
-          onChange={(e) => setNewDialog(e.target.value)}
+          value={newDialogText}
+          onChange={(e) => setNewDialogText(e.target.value)}
           placeholder="📥 Джерело: Instagram\n👤 Привіт\n🤖 Доброго дня..."
           className="min-h-[100px]"
         />

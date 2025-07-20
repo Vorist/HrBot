@@ -1,4 +1,3 @@
-// frontend/src/components/RealDialogsTab.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,55 +10,59 @@ export default function RealDialogsTab() {
   const [newDialog, setNewDialog] = useState("");
   const bottomRef = useRef(null);
 
+  // Завантаження всіх діалогів
   useEffect(() => {
     fetch("/api/real_dialogs")
       .then((res) => res.json())
-      .then((data) => setDialogs(data))
-      .catch((err) => console.error("❌ Failed to load dialogs", err));
+      .then(setDialogs)
+      .catch(() => toast.error("❌ Не вдалося завантажити діалоги"));
   }, []);
 
-  const handleAddDialog = () => {
-    const dialog = newDialog.trim();
-    if (!dialog) return;
+  // Додавання нового діалогу
+  const handleAddDialog = async () => {
+    const text = newDialog.trim();
+    if (!text) return;
 
-    fetch("/api/real_dialogs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: dialog }),
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.detail || "Помилка при додаванні");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setDialogs((prev) => [...prev, data]);
-        setNewDialog("");
-        setTimeout(() => {
-          bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
-        toast.success("✅ Діалог додано");
-      })
-      .catch((err) => {
-        toast.error(err.message);
+    try {
+      const res = await fetch("/api/real_dialogs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
       });
+
+      if (!res.ok) throw new Error("❌ Неможливо додати діалог");
+
+      const added = await res.json();
+      setDialogs((prev) => [...prev, added]);
+      setNewDialog("");
+
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+
+      toast.success("✅ Діалог додано");
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
 
-  const handleDeleteDialog = (index) => {
-    fetch(`/api/real_dialogs/${index}`, { method: "DELETE" })
-      .then((res) => {
-        if (res.ok) {
-          setDialogs((prev) => prev.filter((_, i) => i !== index));
-          toast.success("🗑️ Діалог видалено");
-        } else {
-          toast.error("❌ Не вдалося видалити діалог");
-        }
-      })
-      .catch((err) => console.error("❌ Failed to delete dialog", err));
+  // Видалення діалогу
+  const handleDeleteDialog = async (index) => {
+    try {
+      const res = await fetch(`/api/real_dialogs/${index}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("❌ Неможливо видалити");
+
+      setDialogs((prev) => prev.filter((_, i) => i !== index));
+      toast.success("🗑️ Діалог видалено");
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
 
+  // Перемістити діалог в good або bad і запустити тренування
   const handleConvertAndTrain = async (index, target) => {
     try {
       const res = await fetch("/api/real_dialogs/convert", {
@@ -68,17 +71,17 @@ export default function RealDialogsTab() {
         body: JSON.stringify({ index, target }),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Помилка при переміщенні");
-      }
+      if (!res.ok) throw new Error("❌ Не вдалося перемістити діалог");
 
       setDialogs((prev) => prev.filter((_, i) => i !== index));
-      toast.success(`📤 Діалог переміщено у ${target}`);
+      toast.success(`📤 Переміщено у ${target}`);
 
-      const trainRes = await fetch(`/api/training/${target}`, { method: "POST" });
+      // Навчання
+      const trainRes = await fetch(`/api/training/${target}`, {
+        method: "POST",
+      });
+
       const log = await trainRes.text();
-
       if (trainRes.ok) {
         toast.success(`🤖 Навчання на ${target} завершено`);
         console.log(log);
@@ -91,11 +94,11 @@ export default function RealDialogsTab() {
     }
   };
 
+  // Отримати джерело діалогу з першого рядка
   const extractMeta = (text) => {
-    const lines = text.split("\n");
-    const sourceLine = lines.find((line) => line.startsWith("📥"));
+    const sourceLine = text.split("\n").find((line) => line.startsWith("📥"));
     return {
-      source: sourceLine?.replace("📥", "").trim() || "Невідоме джерело",
+      source: sourceLine?.replace("📥", "").trim() || "Без джерела",
     };
   };
 
@@ -116,8 +119,10 @@ export default function RealDialogsTab() {
             >
               <Card>
                 <CardContent className="space-y-2">
-                  <p className="text-sm text-gray-600">{source}</p>
-                  <pre className="whitespace-pre-wrap text-sm">{dialog.text}</pre>
+                  <p className="text-sm text-gray-600">📥 {source}</p>
+                  <pre className="whitespace-pre-wrap text-sm">
+                    {dialog.text}
+                  </pre>
 
                   <div className="flex gap-2 justify-end flex-wrap">
                     <Button
@@ -151,7 +156,7 @@ export default function RealDialogsTab() {
         <Textarea
           value={newDialog}
           onChange={(e) => setNewDialog(e.target.value)}
-          placeholder={`📥 Джерело: OLX\n👤 Привіт...\n🤖 Вітаю!`}
+          placeholder={`📥 Джерело: Instagram\n👤 Привіт\n🤖 Доброго дня...`}
           className="min-h-[120px]"
         />
         <Button onClick={handleAddDialog} className="self-end w-fit">

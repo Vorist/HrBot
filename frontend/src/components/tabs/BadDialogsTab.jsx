@@ -38,27 +38,13 @@ export default function BadDialogsTab() {
 
   const handleMarkGood = async (index) => {
     const dialog = dialogs[index];
-    const text = dialog.text;
     const feedback = comment[index] || "";
 
     try {
-      await fetch("/api/good_dialogs", {
+      await fetch("/api/bad_dialogs/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-
-      await fetch(`/api/bad_dialogs/${index}`, { method: "DELETE" });
-
-      await fetch("/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text,
-          comment: feedback,
-          status: "positive",
-          source: "bad_dialogs",
-        }),
+        body: JSON.stringify({ index, comment: feedback }),
       });
 
       setDialogs((prev) => prev.filter((_, i) => i !== index));
@@ -69,26 +55,39 @@ export default function BadDialogsTab() {
   };
 
   const handleAdd = async () => {
-    const dialog = newDialog.trim();
-    if (!dialog) return;
+  const raw = newDialog.trim();
+  if (!raw) return;
 
-    try {
-      const res = await fetch("/api/bad_dialogs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: dialog }),
-      });
+  const dialog = raw.split("\n").filter(Boolean).map((line) => {
+    const role = line.startsWith("👤") ? "user" : line.startsWith("🤖") ? "bot" : "unknown";
+    return { role, text: line.trim() };
+  });
 
-      if (!res.ok) throw new Error("❌ Неможливо додати");
+  try {
+    const res = await fetch("/api/bad_dialogs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user: "Кандидат",
+        dialog,
+      }),
+    });
 
-      const data = await res.json();
-      setDialogs((prev) => [...prev, data]);
-      setNewDialog("");
-      toast.success("➕ Додано bad-діалог");
-    } catch (err) {
-      toast.error(err.message || "Помилка додавання діалогу");
+    if (res.status === 409) {
+      toast.error("⚠️ Такий діалог уже існує");
+      return;
     }
-  };
+
+    if (!res.ok) throw new Error("❌ Неможливо додати");
+
+    const data = await res.json();
+    setDialogs((prev) => [...prev, data]);
+    setNewDialog("");
+    toast.success("➕ Додано bad-діалог");
+  } catch (err) {
+    toast.error(err.message || "Помилка додавання діалогу");
+  }
+};
 
   const handleDelete = async (index) => {
     try {
@@ -129,12 +128,10 @@ export default function BadDialogsTab() {
       </div>
 
       {dialogs.map((dialog, index) => {
-        const lines = dialog.text.split("\n");
-        const firstUserLine = lines.find((l) => l.startsWith("👤")) || "";
-        const meta = firstUserLine.slice(2, 50).split("—");
-
-        const name = meta[0]?.trim() || "Кандидат";
-        const date = meta[1]?.trim() || "Без дати";
+        const firstUser = dialog.dialog.find((d) => d.role === "user")?.text || "👤";
+        const match = firstUser?.match(/👤(.+?)—(.+)?/);
+        const name = match?.[1]?.trim() || "Кандидат";
+        const date = match?.[2]?.trim() || dialog.date || "Без дати";
 
         return (
           <Card key={index} className="bg-light-red">
@@ -149,7 +146,7 @@ export default function BadDialogsTab() {
               {expanded[index] && (
                 <div className="space-y-2 mt-2">
                   <pre className="whitespace-pre-wrap text-sm">
-                    {dialog.text}
+                    {dialog.dialog.map((l) => `${l.role === "user" ? "👤" : "🤖"} ${l.text}`).join("\n")}
                   </pre>
 
                   <Textarea

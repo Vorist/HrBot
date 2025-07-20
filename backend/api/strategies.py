@@ -6,14 +6,14 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
 
-# sys.path для config
+# Додати корінь проєкту до sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from config import REFINED_BAD_PATH, FEEDBACK_LESSONS_PATH
 
 router = APIRouter()
 
-# --- Моделі --- #
+# --- Pydantic моделі --- #
 class StrategyUpdate(BaseModel):
     index: int
     improved: str
@@ -28,64 +28,63 @@ class StrategyItem(BaseModel):
     timestamp: str = ""
     feedback_linked: bool = False
 
-
-# --- JSONL --- #
-def load_jsonl(path):
+# --- JSONL утиліти --- #
+def load_jsonl(path: str) -> list:
     if not os.path.exists(path):
         return []
     with open(path, "r", encoding="utf-8") as f:
         return [json.loads(line.strip()) for line in f if line.strip()]
 
-def save_jsonl(path, data):
+def save_jsonl(path: str, data: list):
     with open(path, "w", encoding="utf-8") as f:
-        for d in data:
-            f.write(json.dumps(d, ensure_ascii=False) + "\n")
+        for item in data:
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")
 
+def append_jsonl(path: str, item: dict):
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(item, ensure_ascii=False) + "\n")
 
-# --- GET: всі стратегії --- #
+def enrich_strategy(entry: dict, improved_text: str = "") -> dict:
+    entry["improved"] = improved_text.strip()
+    entry["timestamp"] = datetime.now().isoformat()
+    entry["updated_by"] = "HR"
+    entry["feedback_linked"] = True
+    return entry
+
+# --- GET /api/strategies --- #
 @router.get("/api/strategies")
 def get_strategies():
     return load_jsonl(REFINED_BAD_PATH)
 
-
-# --- POST: оновлення однієї стратегії --- #
+# --- POST /api/strategies/update --- #
 @router.post("/api/strategies/update")
 def update_strategy(payload: StrategyUpdate):
     strategies = load_jsonl(REFINED_BAD_PATH)
 
     if payload.index < 0 or payload.index >= len(strategies):
-        raise HTTPException(status_code=400, detail="Недійсний індекс")
+        raise HTTPException(status_code=400, detail="❌ Недійсний індекс")
 
-    # Оновлення
-    strategies[payload.index]["improved"] = payload.improved.strip()
-    strategies[payload.index]["timestamp"] = datetime.now().isoformat()
-    strategies[payload.index]["updated_by"] = "HR"
-    strategies[payload.index]["feedback_linked"] = True
-
+    strategy = enrich_strategy(strategies[payload.index], payload.improved)
+    strategies[payload.index] = strategy
     save_jsonl(REFINED_BAD_PATH, strategies)
 
-    # Зберегти фідбек
     feedback_entry = {
         "from": "refined_bad_dialogs",
-        "comment": "Покращено вручну через інтерфейс",
-        "dialog": strategies[payload.index],
         "status": "improved",
-        "timestamp": datetime.now().isoformat()
+        "comment": "Покращено вручну через інтерфейс",
+        "dialog": strategy,
+        "timestamp": datetime.now().isoformat(),
     }
-    append_feedback(feedback_entry)
+    append_jsonl(FEEDBACK_LESSONS_PATH, feedback_entry)
 
-    return {"message": "✅ Покращено відповідь + записано у feedback_lessons"}
+    return {"message": "✅ Стратегію оновлено + фідбек збережено"}
 
-
-# --- POST: перезапис усіх у новому порядку --- #
+# --- POST /api/strategies/reorder --- #
 @router.post("/api/strategies/reorder")
 def reorder_strategies(new_order: List[StrategyItem]):
-    clean_data = [item if isinstance(item, dict) else item.dict() for item in new_order]
-    save_jsonl(REFINED_BAD_PATH, clean_data)
-    return {"message": "✅ Порядок оновлено"}
-
-
-# --- Допоміжна функція для запису фідбеку --- #
-def append_feedback(entry):
-    with open(FEEDBACK_LESSONS_PATH, "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    try:
+        ordered = [item.dict() if isinstance(item, StrategyItem) else item for item in new_order]
+        save_jsonl(REFINED_BAD_PATH, ordered)
+        return {"message": "✅ Порядок оновлено успішно"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"❌ Помилка при reorder: {str(e)}")

@@ -16,7 +16,9 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { toast } from "sonner";
 
+// Компонент сортування
 function SortableItem({ id, children }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
@@ -39,43 +41,61 @@ export default function StrategiesTab() {
   const [editedText, setEditedText] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const fetchStrategies = async () => {
-    const res = await fetch("/api/strategies");
-    const data = await res.json();
-
-    const enriched = data.map((item, i) => ({
-      id: `${i}-${item.context?.slice(0, 5) || "item"}`,
-      ...item,
-    }));
-
-    setStrategies(enriched);
-  };
-
-  const saveEdited = async (index) => {
-    setSaving(true);
-    await fetch("/api/strategies/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ index, improved: editedText }),
-    });
-    setEditingIndex(null);
-    setEditedText("");
-    await fetchStrategies();
-    setSaving(false);
-  };
-
-  const saveOrder = async (newList) => {
-    const cleaned = newList.map(({ id, ...rest }) => rest);
-    await fetch("/api/strategies/reorder", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(cleaned),
-    });
-    setStrategies(newList);
-  };
-
   const sensors = useSensors(useSensor(PointerSensor));
 
+  // Завантаження стратегій
+  const loadStrategies = async () => {
+    try {
+      const res = await fetch("/api/strategies");
+      const data = await res.json();
+
+      const enriched = data.map((item, i) => ({
+        id: `${i}-${item.context?.slice(0, 5) || "item"}`,
+        ...item,
+      }));
+
+      setStrategies(enriched);
+    } catch {
+      toast.error("❌ Не вдалося завантажити стратегії");
+    }
+  };
+
+  // Зберегти покращену відповідь
+  const saveImproved = async (index) => {
+    setSaving(true);
+    try {
+      await fetch("/api/strategies/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ index, improved: editedText }),
+      });
+      setEditingIndex(null);
+      setEditedText("");
+      await loadStrategies();
+      toast.success("✅ Відповідь оновлено");
+    } catch {
+      toast.error("❌ Помилка при збереженні");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Зберегти новий порядок
+  const saveOrder = async (newList) => {
+    try {
+      const cleaned = newList.map(({ id, ...rest }) => rest);
+      await fetch("/api/strategies/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cleaned),
+      });
+      setStrategies(newList);
+    } catch {
+      toast.error("❌ Помилка при зміні порядку");
+    }
+  };
+
+  // Перетягування елемента
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (active.id !== over?.id) {
@@ -87,31 +107,35 @@ export default function StrategiesTab() {
   };
 
   useEffect(() => {
-    fetchStrategies();
+    loadStrategies();
   }, []);
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">📈 Стратегії</h2>
+
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={strategies.map((s) => s.id)} strategy={verticalListSortingStrategy}>
           {strategies.map((item, index) => (
             <SortableItem key={item.id} id={item.id}>
               <Card className="border border-muted">
                 <CardContent className="space-y-3 py-4">
-                  <p className="text-sm">
+                  {/* Контекст */}
+                  <div className="text-sm">
                     <span className="font-semibold">Контекст:</span>
                     <br />
                     <span className="whitespace-pre-wrap">{item.context}</span>
-                  </p>
+                  </div>
 
-                  <p className="text-sm">
+                  {/* Оригінальна відповідь */}
+                  <div className="text-sm">
                     <span className="font-semibold">Було (🤖):</span>
                     <br />
                     <span className="text-red-600 whitespace-pre-wrap">{item.original}</span>
-                  </p>
+                  </div>
 
-                  <p className="text-sm">
+                  {/* Покращена відповідь */}
+                  <div className="text-sm">
                     <span className="font-semibold">Стало:</span>
                     <br />
                     {editingIndex === index ? (
@@ -125,10 +149,10 @@ export default function StrategiesTab() {
                         <div className="flex gap-2 mt-2">
                           <Button
                             size="sm"
-                            onClick={() => saveEdited(index)}
+                            onClick={() => saveImproved(index)}
                             disabled={saving || !editedText.trim()}
                           >
-                            Зберегти
+                            💾 Зберегти
                           </Button>
                           <Button
                             size="sm"
@@ -153,12 +177,13 @@ export default function StrategiesTab() {
                             setEditedText(item.improved || "");
                           }}
                         >
-                          Редагувати
+                          ✏️ Редагувати
                         </Button>
                       </div>
                     )}
-                  </p>
+                  </div>
 
+                  {/* Назва стратегії */}
                   {item.strategy && (
                     <p className="text-muted-foreground text-sm">
                       <span className="font-semibold">Стратегія:</span>
@@ -167,9 +192,10 @@ export default function StrategiesTab() {
                     </p>
                   )}
 
+                  {/* Коментарі менеджера */}
                   {item.feedback?.length > 0 && (
                     <div className="bg-muted px-3 py-2 rounded text-sm">
-                      <span className="font-medium">Коментарі:</span>
+                      <span className="font-medium">💬 Коментарі:</span>
                       <ul className="list-disc ml-5 mt-1">
                         {item.feedback.map((f, i) => (
                           <li key={i}>{f}</li>

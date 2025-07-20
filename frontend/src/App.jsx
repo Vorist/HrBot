@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { Toaster } from "react-hot-toast";
 
-import RealDialogsTab from "@/components/RealDialogsTab";
-import GoodDialogsTab from "@/components/GoodDialogsTab";
-import BadDialogsTab from "@/components/BadDialogsTab";
-import StrategiesTab from "@/components/StrategiesTab";
-import FeedbackTab from "@/components/FeedbackTab";
-import TrainingTab from "@/components/TrainingTab";
+import RealDialogsTab from "@/components/tabs/RealDialogsTab";
+import GoodDialogsTab from "@/components/tabs/GoodDialogsTab";
+import BadDialogsTab from "@/components/tabs/BadDialogsTab";
+import StrategiesTab from "@/components/tabs/StrategiesTab";
+import FeedbackTab from "@/components/tabs/FeedbackTab";
+import TrainingTab from "@/components/tabs/TrainingTab";
+
 
 const tabs = [
   { id: "real", label: "Реальні діалоги", icon: "💬" },
@@ -22,28 +23,51 @@ export default function App() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case "real": return <RealDialogsTab />;
-      case "good": return <GoodDialogsTab />;
-      case "bad": return <BadDialogsTab />;
-      case "strategies": return <StrategiesTab />;
-      case "feedback": return <FeedbackTab />;
-      case "training": return <TrainingTab />;
-      default: return null;
+      case "real":
+        return <RealDialogsTab />;
+      case "good":
+        return <GoodDialogsTab />;
+      case "bad":
+        return <BadDialogsTab />;
+      case "strategies":
+        return <StrategiesTab />;
+      case "feedback":
+        return <FeedbackTab />;
+      case "training":
+        return <TrainingTab />;
+      default:
+        return null;
     }
   };
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#ffe4e6", padding: "1rem" }}>
-      <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
+    <div className="min-h-screen bg-pink-100 p-4">
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            border: "1px solid #ff006e",
+            padding: "10px",
+            background: "#fff0f5",
+            color: "#000",
+          },
+        }}
+      />
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.5rem" }}>
+      <div className="flex flex-wrap gap-2 mb-6">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`tab-button ${activeTab === tab.id ? "active" : ""}`}
+            className={`px-4 py-2 rounded-full border transition 
+              ${
+                activeTab === tab.id
+                  ? "bg-pink-600 text-white border-pink-700"
+                  : "bg-white text-pink-700 border-pink-300 hover:bg-pink-200"
+              }`}
           >
-            <span>{tab.icon}</span> {tab.label}
+            {tab.icon} {tab.label}
           </button>
         ))}
       </div>

@@ -1,79 +1,101 @@
 import os
 import json
+from datetime import datetime
+from typing import List, Literal
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import List
-from datetime import datetime
 
 from config import FEEDBACK_LESSONS_PATH
 
 router = APIRouter()
 
-# --- Модель фідбеку --- #
+# ---------- МОДЕЛІ ---------- #
 class FeedbackItem(BaseModel):
-    dialog: dict                      # Повний діалог (user/bot)
-    comment: str                      # Коментар HR
-    status: str = "waiting"           # ⏳ waiting / ✅ applied / ❌ rejected
-    from_: str = "manual"             # Джерело: good/bad/real/refined
-    timestamp: str = None             # Автоматично проставляється
+    dialog: dict
+    comment: str
+    status: Literal["waiting", "applied", "rejected"] = "waiting"
+    from_: Literal["good", "bad", "real", "refined", "manual"] = "manual"
+    timestamp: str | None = None
 
 
-# --- Завантажити всі фідбеки --- #
-def load_feedback():
+class FeedbackUpdate(BaseModel):
+    index: int
+    comment: str | None = None
+    status: Literal["waiting", "applied", "rejected"] | None = None
+
+
+# ---------- ДОПОМІЖНІ ФУНКЦІЇ ---------- #
+def load_feedback() -> List[dict]:
+    """Завантажити список фідбеків із JSONL"""
     if not os.path.exists(FEEDBACK_LESSONS_PATH):
         return []
     with open(FEEDBACK_LESSONS_PATH, "r", encoding="utf-8") as f:
-        return [json.loads(line.strip()) for line in f if line.strip()]
+        lines = f.readlines()
+    return [json.loads(line) for line in lines if line.strip()]
 
 
-# --- Зберегти всі фідбеки --- #
-def save_feedback(feedbacks):
+def save_feedback(feedbacks: List[dict]):
+    """Зберегти список фідбеків у JSONL"""
     with open(FEEDBACK_LESSONS_PATH, "w", encoding="utf-8") as f:
         for item in feedbacks:
             f.write(json.dumps(item, ensure_ascii=False) + "\n")
 
 
-# --- Додати новий фідбек --- #
-@router.post("/api/feedback")
-def add_feedback(item: FeedbackItem):
-    item.timestamp = item.timestamp or datetime.now().isoformat()
-    data = load_feedback()
-    data.append(item.dict())
-    save_feedback(data)
-    return {"message": "✅ Фідбек збережено", "total": len(data)}
+# ---------- API ---------- #
 
-
-# --- Отримати всі фідбеки --- #
 @router.get("/api/feedback")
 def get_feedback():
+    """Отримати всі фідбеки"""
     return load_feedback()
 
 
-# --- Видалити фідбек за індексом --- #
+@router.post("/api/feedback")
+def add_feedback(item: FeedbackItem):
+    """Додати новий фідбек"""
+    if not item.comment.strip():
+        raise HTTPException(status_code=400, detail="Коментар не може бути порожнім")
+    if not isinstance(item.dialog, dict) or "dialog" not in item.dialog:
+        raise HTTPException(status_code=400, detail="Некоректна структура діалогу")
+
+    item.timestamp = item.timestamp or datetime.now().isoformat()
+
+    feedbacks = load_feedback()
+    feedbacks.append(item.dict())
+    save_feedback(feedbacks)
+
+    return {
+        "message": "✅ Фідбек збережено",
+        "total": len(feedbacks)
+    }
+
+
 @router.delete("/api/feedback/{index}")
 def delete_feedback(index: int):
+    """Видалити фідбек за індексом"""
     feedbacks = load_feedback()
     if 0 <= index < len(feedbacks):
         deleted = feedbacks.pop(index)
         save_feedback(feedbacks)
-        return {"message": "🗑️ Видалено", "deleted": deleted}
-    raise HTTPException(status_code=404, detail="Feedback not found")
+        return {
+            "message": "🗑️ Видалено",
+            "deleted": deleted
+        }
+    raise HTTPException(status_code=404, detail="Фідбек не знайдено")
 
-
-# --- Оновити фідбек (статус або коментар) --- #
-class FeedbackUpdate(BaseModel):
-    index: int
-    comment: str = None
-    status: str = None
 
 @router.post("/api/feedback/update")
 def update_feedback(update: FeedbackUpdate):
+    """Оновити коментар або статус фідбеку"""
     feedbacks = load_feedback()
-    if 0 <= update.index < len(feedbacks):
-        if update.comment is not None:
-            feedbacks[update.index]["comment"] = update.comment
-        if update.status is not None:
-            feedbacks[update.index]["status"] = update.status
-        save_feedback(feedbacks)
-        return {"message": "✏️ Фідбек оновлено"}
-    raise HTTPException(status_code=404, detail="Feedback not found")
+    if not (0 <= update.index < len(feedbacks)):
+        raise HTTPException(status_code=404, detail="Фідбек не знайдено")
+
+    if update.comment is not None:
+        feedbacks[update.index]["comment"] = update.comment.strip()
+
+    if update.status is not None:
+        feedbacks[update.index]["status"] = update.status
+
+    save_feedback(feedbacks)
+    return {"message": "✏️ Фідбек оновлено"}

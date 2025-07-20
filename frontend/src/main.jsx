@@ -3,17 +3,17 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 
-// ✅ Підключення кастомного CSS без Tailwind
+// ✅ Підключення власного стилю (без Tailwind)
 import "./index.css";
 
-// 🔍 Знаходимо елемент з id="root"
+// 🔍 Отримуємо root-елемент з index.html
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
-  throw new Error("❌ Не знайдено елемент з id='root' у index.html");
+  throw new Error("❌ Елемент з id='root' не знайдено у index.html");
 }
 
-// 🚀 Рендер додатку
+// 🚀 Створення root і рендер у StrictMode
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
