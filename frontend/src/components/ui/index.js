@@ -1,8 +1,8 @@
-export { default as Button } from './Button';
-export { default as Input } from './Input';
-export { default as Textarea } from './Textarea';
-export { default as Select } from './Select';
-export { default as Label } from './Label';
-export { default as Dialog } from './Dialog';
-export { default as Badge } from './Badge';
-export { default as Switch } from './Switch';
+export { Button } from './button';
+export { Input } from './Input';
+export { Textarea } from './textarea';
+export { Select } from './select';
+export { Label } from './label';
+export { Dialog } from './dialog';
+export { Badge } from './badge';
+export { Switch } from './switch';
