@@ -1,10 +1,11 @@
-import "./styles.css";
+// frontend/src/components/ui/Input.jsx
+import React from 'react';
+import './Input.css'; // якщо є стилі
 
-export function Input({ value, onChange, type = "text", placeholder = "", className = "", ...props }) {
+export function Input({ value, onChange, placeholder, ...props }) {
   return (
     <input
-      type={type}
-      className={`custom-input ${className}`}
+      className="custom-input"
       value={value}
       onChange={onChange}
       placeholder={placeholder}

@@ -1,43 +1,30 @@
-import React, { useState } from "react";
-import RealDialogsTab from "@/components/tabs/RealDialogsTab";
-import GoodDialogsTab from "@/components/tabs/GoodDialogsTab";
-import BadDialogsTab from "@/components/tabs/BadDialogsTab";
-import StrategiesTab from "@/components/tabs/StrategiesTab";
-import FeedbackTab from "@/components/tabs/FeedbackTab";
+// frontend/src/components/Tabs.jsx
+import React from 'react';
+import './Tabs.css';
 
-import { Button } from "@/components/ui/button";
-
-const TABS = [
-  { id: "real", label: "💬 Реальні діалоги", component: <RealDialogsTab /> },
-  { id: "good", label: "✅ Хороші діалоги", component: <GoodDialogsTab /> },
-  { id: "bad", label: "⚠️ Погані діалоги", component: <BadDialogsTab /> },
-  { id: "strategies", label: "📈 Стратегії", component: <StrategiesTab /> },
-  { id: "feedback", label: "💬 Фідбек", component: <FeedbackTab /> },
+const tabs = [
+  { id: 'real', label: '💬 Реальні діалоги' },
+  { id: 'good', label: '✅ Хороші діалоги' },
+  { id: 'bad', label: '⚠️ Погані діалоги' },
+  { id: 'feedback', label: '💬 Фідбек' },
+  { id: 'strategies', label: '📈 Стратегії' },
+  { id: 'training', label: '🧠 Навчання' },
 ];
 
-export default function Tabs() {
-  const [activeTab, setActiveTab] = useState("real");
-
-  const activeComponent = TABS.find((tab) => tab.id === activeTab)?.component;
-
+function Tabs({ activeTab, setActiveTab }) {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {TABS.map((tab) => (
-          <Button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            variant={activeTab === tab.id ? "default" : "outline"}
-            className={activeTab === tab.id ? "font-bold" : ""}
-          >
-            {tab.label}
-          </Button>
-        ))}
-      </div>
-
-      <div className="pt-2">
-        {activeComponent || <p className="text-red-500">❌ Вкладка не знайдена</p>}
-      </div>
-    </div>
+    <nav className="tabs-nav">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
+          onClick={() => setActiveTab(tab.id)}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </nav>
   );
 }
+
+export default Tabs;

@@ -5,13 +5,14 @@ import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from config import (
-    GOOD_DIALOGS_PATH, BAD_DIALOGS_PATH, REAL_DIALOGS_PATH,
+    GOOD_DIALOGS_PATH, BAD_DIALOGS_PATH, REAL_DIALOGS_TXT_PATH,
     TRAINING_OUTPUT_PATH, FEEDBACK_COMMENTS_PATH
 )
 from knowledge_embeddings import embed_text
 from utils import split_dialog_into_chunks, log
 from trainer.feedback_processor import extract_feedback_insights
 from trainer.strategy_refiner import refine_bad_dialogs
+
 
 def load_text_dialogs(path):
     if not os.path.exists(path):
@@ -27,33 +28,18 @@ def load_text_dialogs(path):
                 continue
     return dialogs
 
-def load_real_dialogs(path):
-    dialogs = []
+
+def load_real_dialogs_from_txt(path):
     if not os.path.exists(path):
-        return dialogs
+        return []
     with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            try:
-                obj = json.loads(line.strip())
-                if isinstance(obj, dict) and "dialog" in obj:
-                    lines = []
-                    for turn in obj["dialog"]:
-                        if isinstance(turn, dict):
-                            role = turn.get("role", "")
-                            text = turn.get("text", "").strip()
-                            if not text:
-                                continue
-                            prefix = "👤" if role == "user" else "🤖"
-                            lines.append(f"{prefix} {text}")
-                    if lines:
-                        full_dialog = "\n".join(lines)
-                        dialogs.append(full_dialog)
-            except json.JSONDecodeError:
-                continue
-    return dialogs
+        raw = f.read().strip()
+    blocks = [b.strip() for b in raw.split("\n\n") if b.strip()]
+    return blocks
+
 
 def learn_from_dialogs():
-    log("[📚] Навчання на основі good, bad, real, feedback, refined...")
+    log("[📚] Навчання на основі good, bad, real (txt), feedback, refined...")
 
     combined_chunks = []
 
@@ -64,7 +50,7 @@ def learn_from_dialogs():
 
     add_chunks(load_text_dialogs(GOOD_DIALOGS_PATH), "good")
     add_chunks(load_text_dialogs(BAD_DIALOGS_PATH), "bad")
-    add_chunks(load_real_dialogs(REAL_DIALOGS_PATH), "real")
+    add_chunks(load_real_dialogs_from_txt(REAL_DIALOGS_TXT_PATH), "real")
 
     if os.path.exists(FEEDBACK_COMMENTS_PATH):
         try:
@@ -115,6 +101,7 @@ def learn_from_dialogs():
         json.dump(embedded_chunks, f, ensure_ascii=False, indent=2)
 
     log(f"✅ Навчання завершено: {len(embedded_chunks)} ембедінгів збережено → {TRAINING_OUTPUT_PATH}")
+
 
 if __name__ == "__main__":
     learn_from_dialogs()

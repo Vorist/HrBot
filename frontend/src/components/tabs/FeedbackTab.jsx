@@ -1,124 +1,73 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+// frontend/src/components/tabs/FeedbackTab.jsx
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import './FeedbackTab.css';
 
 export default function FeedbackTab() {
-  const [feedbacks, setFeedbacks] = useState([]);
-  const [newFeedback, setNewFeedback] = useState("");
-  const [selectedIndex, setSelectedIndex] = useState(null);
-  const textareaRef = useRef(null);
+  const [dialogs, setDialogs] = useState([]);
+  const [comments, setComments] = useState({});
 
   useEffect(() => {
-    fetch("/api/training/feedback")
-      .then((res) => res.json())
-      .then((data) => setFeedbacks(data))
-      .catch(() => toast.error("❌ Не вдалося завантажити фідбеки"));
+    fetchDialogsNeedingFeedback();
   }, []);
 
-  useEffect(() => {
-    if (selectedIndex !== null) {
-      const selected = feedbacks[selectedIndex];
-      setNewFeedback(selected?.comment || "");
-      setTimeout(() => textareaRef.current?.focus(), 100);
-    }
-  }, [selectedIndex]);
-
-  const handleSendFeedback = async () => {
-    if (!newFeedback.trim() || selectedIndex === null) return;
-
+  const fetchDialogsNeedingFeedback = async () => {
     try {
-      const res = await fetch("/api/training/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          index: selectedIndex,
-          comment: newFeedback.trim(),
-        }),
+      const response = await axios.get('/api/feedback');
+      const filtered = response.data.filter((d) => !d.comment || d.comment.trim() === '');
+      setDialogs(filtered);
+    } catch (error) {
+      console.error('Помилка завантаження фідбек-діалогів:', error);
+    }
+  };
+
+  const handleCommentChange = (index, value) => {
+    setComments({ ...comments, [index]: value });
+  };
+
+  const submitFeedback = async (index) => {
+    try {
+      await axios.post('/api/feedback', {
+        index,
+        comment: comments[index] || ''
       });
 
-      if (!res.ok) throw new Error("❌ Не вдалося зберегти фідбек");
-
-      const updated = await res.json();
-      setFeedbacks(updated);
-      toast.success("✅ Фідбек збережено");
-      setSelectedIndex(null);
-      setNewFeedback("");
-    } catch (err) {
-      toast.error(err.message || "Помилка при збереженні");
+      setDialogs(dialogs.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('Помилка при збереженні фідбеку:', error);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold">💬 Фідбек по діалогам</h2>
-
-      {feedbacks.map((item, index) => {
-        const isSelected = selectedIndex === index;
-        const hasComment = !!item.comment?.trim();
-        const dialogText = Array.isArray(item.dialog)
-          ? item.dialog.map((d) => `${d.role === "user" ? "👤" : "🤖"} ${d.text}`).join("\n")
-          : typeof item.dialog === "string"
-          ? item.dialog
-          : "⚠️ Невідомий формат діалогу";
-
-        return (
-          <Card
-            key={index}
-            onClick={() => setSelectedIndex(index)}
-            className={`cursor-pointer ${isSelected ? "highlighted-card" : "default-card"}`}
-          >
-            <CardContent className="space-y-2">
-              <div className="text-sm whitespace-pre-wrap">
-                <strong>📄 Діалог:</strong>
-                <br />
-                {dialogText}
+    <div className="feedback-tab">
+      <h2>💬 Фідбек до діалогів</h2>
+      {dialogs.length === 0 ? (
+        <p className="empty-message">✅ Немає діалогів, які потребують фідбеку</p>
+      ) : (
+        <div className="dialog-list">
+          {dialogs.map((item, index) => (
+            <div key={index} className="dialog-card">
+              <div className="dialog-content">
+                {item.dialog.map((line, i) => (
+                  <div key={i} className="dialog-line">
+                    <strong>{line.role === 'user' ? '👤' : '🤖'}</strong> {line.text}
+                  </div>
+                ))}
               </div>
 
-              {item.status && (
-                <div className="text-xs text-muted-foreground italic">
-                  🏷 Статус: {item.status}
-                </div>
-              )}
+              <textarea
+                placeholder="📝 Напишіть загальний фідбек по діалогу..."
+                value={comments[index] || ''}
+                onChange={(e) => handleCommentChange(index, e.target.value)}
+              />
 
-              {hasComment && !isSelected && (
-                <div className="text-xs text-green-600 font-semibold">
-                  💬 Коментар збережено
-                </div>
-              )}
-
-              {isSelected && (
-                <>
-                  <Textarea
-                    ref={textareaRef}
-                    value={newFeedback}
-                    onChange={(e) => setNewFeedback(e.target.value)}
-                    placeholder="✍️ Напиши новий коментар до діалогу"
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedIndex(null);
-                        setNewFeedback("");
-                      }}
-                    >
-                      Скасувати
-                    </Button>
-                    <Button
-                      onClick={handleSendFeedback}
-                      disabled={!newFeedback.trim()}
-                    >
-                      💾 Зберегти фідбек
-                    </Button>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
+              <button className="submit-btn" onClick={() => submitFeedback(index)}>
+                💾 Зберегти фідбек
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

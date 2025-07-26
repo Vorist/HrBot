@@ -1,23 +1,17 @@
-# scripts/convert_real_dialogs.py
-
 import os
 import sys
 import json
-from datetime import datetime
 
-# ✅ Додаємо корінь проєкту в sys.path
+# ✅ Додаємо корінь проєкту
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from config import REAL_DIALOGS_TXT_PATH, REAL_DIALOGS_PATH, USED_DIALOGS_PATH
-from log import log
-
 
 def safe_print(message):
     try:
         print(message)
     except UnicodeEncodeError:
         print(message.encode("ascii", "ignore").decode())
-
 
 def load_used_dialogs():
     if os.path.exists(USED_DIALOGS_PATH):
@@ -30,7 +24,6 @@ def load_used_dialogs():
             return {}
     return {}
 
-
 def save_used_dialogs(used):
     try:
         with open(USED_DIALOGS_PATH, "w", encoding="utf-8") as f:
@@ -38,78 +31,47 @@ def save_used_dialogs(used):
     except Exception as e:
         safe_print(f"❌ Не вдалося зберегти used_dialogs: {e}")
 
+def parse_dialog_block(lines):
+    source = None
+    dialog_lines = []
 
-def parse_dialog_block(block):
-    lines = [line.strip() for line in block.split("\n") if line.strip()]
-    if not lines or not lines[0].lower().startswith("source:"):
-        return None
-
-    source = lines[0].split(":", 1)[-1].strip()
-    dialog_lines = lines[1:]
-
-    formatted_dialog = f"📥 Джерело: {source}\n"
-    for line in dialog_lines:
-        if line.lower().startswith("bot"):
-            text = line[3:].strip(" :")
-            formatted_dialog += f"🤖 {text}\n"
-        elif line.lower().startswith("user"):
-            text = line[4:].strip(" :")
-            formatted_dialog += f"👤 {text}\n"
-        elif line.startswith("🤖") or line.startswith("👤"):
-            formatted_dialog += line + "\n"  # already formatted
-
-    return formatted_dialog.strip()
-
-
-def load_real_dialogs_from_txt(path: str) -> list:
-    dialogs = []
-    with open(path, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-
-    buffer = []
     for line in lines:
         line = line.strip()
         if not line:
-            if buffer:
-                dialogs.append("\n".join(buffer))
-                buffer = []
             continue
         if line.lower().startswith("source:"):
-            buffer.append(f"📥 Джерело: {line.split(':', 1)[1].strip()}")
+            source = line.split(":", 1)[-1].strip()
         elif line.lower().startswith("bot"):
-            buffer.append("🤖 " + line[3:].strip(" :"))
+            dialog_lines.append(f"🤖 {line[3:].strip(' :')}")
         elif line.lower().startswith("user"):
-            buffer.append("👤 " + line[4:].strip(" :"))
+            dialog_lines.append(f"👤 {line[4:].strip(' :')}")
         elif line.startswith("🤖") or line.startswith("👤"):
-            buffer.append(line)
+            dialog_lines.append(line)
 
-    if buffer:
-        dialogs.append("\n".join(buffer))
+    if not source or not dialog_lines:
+        return None
 
-    return dialogs
+    return f"📥 Джерело: {source}\n" + "\n".join(dialog_lines)
 
+def load_real_dialogs_from_txt(path):
+    with open(path, "r", encoding="utf-8") as f:
+        raw = f.read()
+    blocks = [block.strip().splitlines() for block in raw.strip().split("\n\n") if block.strip()]
+    return blocks
 
 def convert():
     if not os.path.exists(REAL_DIALOGS_TXT_PATH):
-        safe_print(f"❌ Файл {REAL_DIALOGS_TXT_PATH} не знайдено.")
+        safe_print(f"❌ Файл не знайдено: {REAL_DIALOGS_TXT_PATH}")
         return
 
-    try:
-        with open(REAL_DIALOGS_TXT_PATH, "r", encoding="utf-8") as f:
-            raw = f.read()
-    except Exception as e:
-        safe_print(f"❌ Помилка читання TXT: {e}")
-        return
-
-    blocks = [b.strip() for b in raw.split("\n\n") if b.strip()]
+    blocks = load_real_dialogs_from_txt(REAL_DIALOGS_TXT_PATH)
     used = load_used_dialogs()
     new_items = []
 
-    for block in blocks:
-        formatted = parse_dialog_block(block)
+    for lines in blocks:
+        formatted = parse_dialog_block(lines)
         if not formatted or formatted in used:
             continue
-
         new_items.append({"text": formatted})
         used[formatted] = True
 
@@ -126,7 +88,6 @@ def convert():
         safe_print(f"✅ Додано {len(new_items)} нових діалогів → {REAL_DIALOGS_PATH}")
     except Exception as e:
         safe_print(f"❌ Помилка запису JSONL: {e}")
-
 
 if __name__ == "__main__":
     convert()

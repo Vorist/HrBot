@@ -1,191 +1,129 @@
-import React, { useEffect, useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "sonner";
+// frontend/src/components/tabs/BadDialogsTab.jsx
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import './BadDialogsTab.css';
 
 export default function BadDialogsTab() {
   const [dialogs, setDialogs] = useState([]);
-  const [newDialog, setNewDialog] = useState("");
-  const [comment, setComment] = useState({});
-  const [expanded, setExpanded] = useState({});
-  const [training, setTraining] = useState(false);
-  const textareaRef = useRef(null);
-
-  const fetchDialogs = async () => {
-    try {
-      const res = await fetch("/api/bad_dialogs");
-      const data = await res.json();
-      setDialogs(data);
-    } catch {
-      toast.error("❌ Не вдалося завантажити bad-діалоги");
-    }
-  };
+  const [newDialog, setNewDialog] = useState('');
+  const [feedbacks, setFeedbacks] = useState({});
+  const [showCommentInput, setShowCommentInput] = useState({});
 
   useEffect(() => {
-    fetchDialogs();
+    fetchBadDialogs();
   }, []);
 
-  const toggleExpand = (index) => {
-    setExpanded((prev) => {
-      const newState = { ...prev, [index]: !prev[index] };
-      if (newState[index]) {
-        setTimeout(() => textareaRef.current?.focus(), 100);
-      }
-      return newState;
-    });
-  };
-
-  const handleMarkGood = async (index) => {
-    const dialog = dialogs[index];
-    const feedback = comment[index] || "";
-
+  const fetchBadDialogs = async () => {
     try {
-      await fetch("/api/bad_dialogs/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ index, comment: feedback }),
-      });
-
-      setDialogs((prev) => prev.filter((_, i) => i !== index));
-      toast.success("✅ Перенесено в хороші + фідбек збережено");
-    } catch {
-      toast.error("❌ Помилка при перенесенні або фідбеці");
+      const response = await axios.get('/api/bad_dialogs');
+      setDialogs(response.data);
+    } catch (error) {
+      console.error('Помилка завантаження поганих діалогів:', error);
     }
   };
-
-  const handleAdd = async () => {
-  const raw = newDialog.trim();
-  if (!raw) return;
-
-  const dialog = raw.split("\n").filter(Boolean).map((line) => {
-    const role = line.startsWith("👤") ? "user" : line.startsWith("🤖") ? "bot" : "unknown";
-    return { role, text: line.trim() };
-  });
-
-  try {
-    const res = await fetch("/api/bad_dialogs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user: "Кандидат",
-        dialog,
-      }),
-    });
-
-    if (res.status === 409) {
-      toast.error("⚠️ Такий діалог уже існує");
-      return;
-    }
-
-    if (!res.ok) throw new Error("❌ Неможливо додати");
-
-    const data = await res.json();
-    setDialogs((prev) => [...prev, data]);
-    setNewDialog("");
-    toast.success("➕ Додано bad-діалог");
-  } catch (err) {
-    toast.error(err.message || "Помилка додавання діалогу");
-  }
-};
 
   const handleDelete = async (index) => {
     try {
-      const res = await fetch(`/api/bad_dialogs/${index}`, {
-        method: "DELETE",
+      await axios.delete(`/api/bad_dialogs/${index}`);
+      setDialogs(dialogs.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('Не вдалося видалити діалог:', error);
+    }
+  };
+
+  const handlePromoteToGood = async (index) => {
+    try {
+      await axios.post('/api/bad_dialogs/feedback', {
+        index,
+        comment: feedbacks[index] || ''
       });
+      setDialogs(dialogs.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('Не вдалося перенести діалог у "хороші":', error);
+    }
+  };
 
-      if (!res.ok) throw new Error("Помилка видалення");
-
-      setDialogs((prev) => prev.filter((_, i) => i !== index));
-      toast.success("🗑 Діалог видалено");
-    } catch (err) {
-      toast.error(err.message || "Помилка при видаленні");
+  const handleAddNew = async () => {
+    try {
+      await axios.post('/api/bad_dialogs', {
+        user: 'Кандидат',
+        dialog: parseDialogText(newDialog)
+      });
+      setNewDialog('');
+      fetchBadDialogs();
+    } catch (error) {
+      if (error.response && error.response.status === 409) {
+        alert('Такий діалог вже існує.');
+      } else {
+        console.error('Помилка при додаванні:', error);
+      }
     }
   };
 
   const handleTrain = async () => {
-    setTraining(true);
     try {
-      const res = await fetch("/api/training/bad", { method: "POST" });
-      const text = await res.text();
-      toast.success("🧠 Навчання завершено");
-      console.log(text);
-    } catch {
-      toast.error("❌ Помилка навчання");
-    } finally {
-      setTraining(false);
+      const response = await axios.post('/api/training/bad');
+      alert('Навчання завершено:\n\n' + response.data.message);
+    } catch (error) {
+      console.error('Помилка навчання:', error);
     }
   };
 
+  const parseDialogText = (text) => {
+    return text
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        if (line.startsWith('👤')) return { role: 'user', text: line.replace('👤', '').trim() };
+        if (line.startsWith('🤖')) return { role: 'bot', text: line.replace('🤖', '').trim() };
+        return { role: 'bot', text: line }; // fallback
+      });
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex-between">
-        <h2 className="text-xl font-semibold">🚫 Погані діалоги</h2>
-        <Button onClick={handleTrain} disabled={training}>
-          {training ? "Навчання..." : "🧠 Навчити"}
-        </Button>
-      </div>
+    <div className="bad-tab">
+      <h2>⚠️ Погані діалоги</h2>
 
-      {dialogs.map((dialog, index) => {
-        const firstUser = dialog.dialog.find((d) => d.role === "user")?.text || "👤";
-        const match = firstUser?.match(/👤(.+?)—(.+)?/);
-        const name = match?.[1]?.trim() || "Кандидат";
-        const date = match?.[2]?.trim() || dialog.date || "Без дати";
-
-        return (
-          <Card key={index} className="bg-light-red">
-            <CardContent>
-              <div
-                className="text-sm font-semibold clickable"
-                onClick={() => toggleExpand(index)}
-              >
-                👤 {name} — 📅 {date} {expanded[index] ? "▲" : "▼"}
-              </div>
-
-              {expanded[index] && (
-                <div className="space-y-2 mt-2">
-                  <pre className="whitespace-pre-wrap text-sm">
-                    {dialog.dialog.map((l) => `${l.role === "user" ? "👤" : "🤖"} ${l.text}`).join("\n")}
-                  </pre>
-
-                  <Textarea
-                    ref={textareaRef}
-                    placeholder="✍️ Ваш коментар"
-                    value={comment[index] || ""}
-                    onChange={(e) =>
-                      setComment({ ...comment, [index]: e.target.value })
-                    }
-                  />
-
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDelete(index)}
-                    >
-                      🗑 Видалити
-                    </Button>
-                    <Button size="sm" onClick={() => handleMarkGood(index)}>
-                      ✅ Позначити як хороший
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
-
-      <div className="flex flex-col gap-2">
-        <Textarea
+      <div className="bad-controls">
+        <textarea
+          placeholder="📥 Джерело: OLX\n👤 Добрий день\n🤖 Добрий день, слухаю вас..."
           value={newDialog}
           onChange={(e) => setNewDialog(e.target.value)}
-          placeholder="📥 Джерело: OLX\n👤 Добрий день!\n🤖 Вітаю, чим можу допомогти?"
         />
-        <Button onClick={handleAdd} className="self-end w-fit">
-          ➕ Додати
-        </Button>
+        <button onClick={handleAddNew}>➕ Додати</button>
+        <button onClick={handleTrain}>🧠 Навчити</button>
+      </div>
+
+      <div className="dialog-list">
+        {dialogs.map((d, index) => (
+          <div className="dialog-card" key={index}>
+            <div className="dialog-header">
+              {d.user || 'Кандидат'}, {d.date || 'Дата невідома'}
+            </div>
+
+            <div className="dialog-body">
+              {d.dialog.map((line, i) => (
+                <div key={i} className="dialog-line">
+                  <strong>{line.role === 'user' ? '👤' : '🤖'}</strong> {line.text}
+                </div>
+              ))}
+            </div>
+
+            <div className="dialog-footer">
+              <textarea
+                placeholder="Залишити коментар..."
+                value={feedbacks[index] || ''}
+                onChange={(e) =>
+                  setFeedbacks({ ...feedbacks, [index]: e.target.value })
+                }
+              />
+              <div className="dialog-actions">
+                <button onClick={() => handlePromoteToGood(index)}>✅ В good</button>
+                <button onClick={() => handleDelete(index)}>🗑️ Видалити</button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

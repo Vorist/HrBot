@@ -7,8 +7,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from config import FEEDBACK_COMMENTS_PATH, FEEDBACK_LESSONS_PATH
 from utils import log
+from backend.utils.jsonl_utils import append_jsonl, load_jsonl  # використовуємо JSONL
 
 LOG_PATH = "logs/training_log.txt"
+
 
 def log_to_file(message: str):
     os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
@@ -96,9 +98,9 @@ def process_feedbacks():
 
     try:
         os.makedirs(os.path.dirname(FEEDBACK_LESSONS_PATH), exist_ok=True)
-        with open(FEEDBACK_LESSONS_PATH, "w", encoding="utf-8") as f:
-            json.dump(insights, f, ensure_ascii=False, indent=2)
-        log_to_file(f"✅ Збережено {len(insights)} рекомендацій у {FEEDBACK_LESSONS_PATH}")
+        for insight in insights:
+            append_jsonl(FEEDBACK_LESSONS_PATH, insight)
+        log_to_file(f"✅ Додано {len(insights)} рекомендацій у {FEEDBACK_LESSONS_PATH}")
     except Exception as e:
         log_to_file(f"❌ Помилка при збереженні: {e}")
 

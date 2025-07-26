@@ -1,0 +1,63 @@
+.feedback-tab {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.feedback-tab h2 {
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+.empty-message {
+  text-align: center;
+  color: gray;
+  margin-top: 40px;
+  font-size: 18px;
+}
+
+.dialog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dialog-card {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background-color: #f3f4f6;
+  padding: 10px;
+}
+
+.dialog-content {
+  background-color: white;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
+.dialog-line {
+  margin: 6px 0;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #aaa;
+  font-size: 14px;
+  resize: vertical;
+  margin-top: 10px;
+}
+
+.submit-btn {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-top: 10px;
+  cursor: pointer;
+  float: right;
+}

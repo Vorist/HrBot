@@ -11,7 +11,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 # === Шлях до уроків з фідбеку ===
-FEEDBACK_LESSONS_PATH = "data/feedback_lessons.json"
+FEEDBACK_LESSONS_PATH = "data/load_jsonl()"
 
 # --- Завантаження уроків з фідбеків --- #
 def load_feedback_lessons(path=FEEDBACK_LESSONS_PATH):

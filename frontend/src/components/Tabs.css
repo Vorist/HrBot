@@ -1,0 +1,30 @@
+/* frontend/src/components/Tabs.css */
+.tabs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  background-color: #1e293b;
+  padding: 12px;
+  gap: 10px;
+  border-bottom: 3px solid #3b82f6;
+}
+
+.tab-button {
+  background-color: #334155;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.tab-button:hover {
+  background-color: #3b82f6;
+}
+
+.tab-button.active {
+  background-color: #3b82f6;
+  font-weight: bold;
+}

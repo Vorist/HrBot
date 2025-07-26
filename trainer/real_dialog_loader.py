@@ -11,21 +11,26 @@ def log_to_file(message: str):
         f.write(full_message + "\n")
     print(full_message)
 
+
 def load_real_dialogs_from_txt(path: str) -> list:
     """
     Завантажує діалоги з real_dialogs.txt у форматі:
-    📥 Джерело: OLX
-    👤 Привіт!
-    🤖 Доброго дня! Як можу допомогти?
-
-    Кожен блок — окремий діалог, розділені порожнім рядком.
+    📥 Джерело: Instagram
+    🤖 Привіт!
+    👤 Скільки заробіток?
+    ...
+    Кожен діалог — блок з кількох рядків, відокремлений порожнім рядком.
     """
     if not os.path.exists(path):
         log_to_file(f"❌ Файл {path} не знайдено.")
         return []
 
-    with open(path, "r", encoding="utf-8") as f:
-        raw = f.read()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = f.read()
+    except Exception as e:
+        log_to_file(f"❌ Помилка при зчитуванні {path}: {e}")
+        return []
 
     blocks = [b.strip() for b in raw.split("\n\n") if b.strip()]
     parsed_dialogs = []
@@ -35,7 +40,7 @@ def load_real_dialogs_from_txt(path: str) -> list:
         if not lines:
             continue
 
-        # --- Обробка першого рядка (джерело) --- #
+        # --- Обов’язково має бути джерело --- #
         source_line = lines[0].strip()
         if not source_line.startswith("📥 Джерело:"):
             continue

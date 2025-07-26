@@ -1,66 +1,53 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import axios from 'axios';
+import '@/components/ui/TrainingTab.css'; // стилі до цієї вкладки
+
+const trainingOptions = [
+  { label: "✅ Навчити на good_dialogs", endpoint: "/api/train/good" },
+  { label: "⚠️ Навчити на bad_dialogs", endpoint: "/api/train/bad" },
+  { label: "💬 Навчити з урахуванням фідбеку", endpoint: "/api/train/feedback" },
+  { label: "📥 Навчити на real_dialogs", endpoint: "/api/train/real" },
+  { label: "🧠 Повне навчання", endpoint: "/api/train/all" }
+];
 
 export default function TrainingTab() {
   const [status, setStatus] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [log, setLog] = useState("");
+  const [log, setLog] = useState('');
 
-  const train = async (type) => {
-    setLoading(true);
-    setStatus(`⏳ Навчання ${type}...`);
-    setLog("");
-
+  const handleTrain = async (endpoint) => {
+    setStatus("⏳ Навчання запущено...");
+    setLog('');
     try {
-      const res = await fetch(`/api/training/${type}`, { method: "POST" });
-      const output = await res.text();
-
-      if (res.ok) {
-        setStatus(`✅ Навчання на '${type}' завершено`);
-      } else {
-        setStatus(`❌ Помилка під час навчання (${type})`);
-      }
-
-      setLog(output);
-    } catch (err) {
-      const message = err.message || "Невідома помилка";
-      setStatus(`❌ Помилка: ${message}`);
-      setLog(message);
-    } finally {
-      setLoading(false);
+      const response = await axios.post(endpoint);
+      setStatus("✅ Навчання завершено успішно");
+      setLog(response.data?.log || "✓ Без додаткових повідомлень.");
+    } catch (error) {
+      setStatus("❌ Помилка під час навчання");
+      setLog(error.response?.data?.error || "Невідома помилка.");
     }
   };
 
-  const trainingTypes = [
-    { type: "good", label: "✅ Навчити на good_dialogs" },
-    { type: "bad", label: "⚠️ Навчити на bad_dialogs" },
-    { type: "feedback", label: "💬 Навчити з урахуванням фідбеку" },
-    { type: "real", label: "📥 Навчити на real_dialogs" },
-    { type: "all", label: "🧠 Повне навчання (all)" },
-  ];
-
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold">🧠 Навчання бота</h2>
+    <div className="training-tab">
+      <h2 className="training-title">🧠 Навчання бота</h2>
 
-      <div className="flex flex-wrap gap-3">
-        {trainingTypes.map(({ type, label }) => (
-          <Button key={type} onClick={() => train(type)} disabled={loading}>
-            {label}
-          </Button>
+      <div className="training-buttons">
+        {trainingOptions.map(({ label, endpoint }) => (
+          <div key={endpoint} className="training-card">
+            <span>{label}</span>
+            <button className="custom-button" onClick={() => handleTrain(endpoint)}>Запустити</button>
+          </div>
         ))}
       </div>
 
       {status && (
-        <p className="text-sm font-medium text-gray-800">
-          {status}
-        </p>
+        <div className="training-status">
+          <strong>Статус:</strong> {status}
+        </div>
       )}
 
       {log && (
-        <pre className="bg-white p-3 rounded text-sm whitespace-pre-wrap max-h-[400px] overflow-auto border border-gray-300">
-          {log}
-        </pre>
+        <pre className="training-log">{log}</pre>
       )}
     </div>
   );

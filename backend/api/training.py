@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Response, HTTPException
 from typing import Optional, List
 import subprocess
+import os
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
-# --- Конфігурація --- #
+# === 🔧 Налаштування ===
 TRAINER_DIR = "trainer"
-TIMEOUT = 300  # 5 хвилин
+TIMEOUT = 300  # секунд
 
 ALLOWED_SCRIPTS = {
     "train_from_good.py",
@@ -18,18 +21,18 @@ ALLOWED_SCRIPTS = {
 
 def run_script(script_name: str, args: Optional[List[str]] = None) -> Response:
     """
-    Запускає Python-скрипт з trainer/ з необов'язковими аргументами.
+    Запускає python-скрипт з trainer/, дозволяє передати аргументи.
     """
     if script_name not in ALLOWED_SCRIPTS:
-        raise HTTPException(status_code=400, detail=f"⛔ Скрипт {script_name} не дозволений")
+        logger.warning(f"⛔ Заборонений скрипт: {script_name}")
+        raise HTTPException(status_code=400, detail=f"⛔ Скрипт {script_name} не дозволено запускати.")
 
-    command = ["python", f"{TRAINER_DIR}/{script_name}"]
+    command = ["python", os.path.join(TRAINER_DIR, script_name)]
     if args:
         command.extend(args)
 
     try:
-        print(f"🔧 Запуск: {' '.join(command)}")
-
+        logger.info(f"🔧 Запуск скрипта: {' '.join(command)}")
         result = subprocess.run(
             command,
             capture_output=True,
@@ -37,21 +40,22 @@ def run_script(script_name: str, args: Optional[List[str]] = None) -> Response:
             timeout=TIMEOUT
         )
 
-        output = result.stdout.strip()
-        errors = result.stderr.strip()
+        stdout = result.stdout.strip()
+        stderr = result.stderr.strip()
 
         if result.returncode == 0:
-            print("✅ Навчання завершено успішно")
-            return Response(content=output, status_code=200, media_type="text/plain")
+            logger.info("✅ Навчання виконано успішно")
+            return Response(content=stdout, status_code=200, media_type="text/plain")
         else:
-            print("❌ Навчання завершилось з помилкою")
+            logger.error(f"❌ Навчання завершилось з кодом {result.returncode}")
             return Response(
-                content=f"⚠️ Навчання завершено з кодом {result.returncode}\n\nSTDOUT:\n{output}\n\nSTDERR:\n{errors}",
+                content=f"⚠️ Навчання завершилось з кодом {result.returncode}\n\nSTDOUT:\n{stdout}\n\nSTDERR:\n{stderr}",
                 status_code=500,
                 media_type="text/plain"
             )
 
     except subprocess.TimeoutExpired:
+        logger.error(f"⏰ Скрипт {script_name} перевищив таймаут {TIMEOUT} сек")
         return Response(
             content=f"⏰ Час виконання скрипта {script_name} перевищено ({TIMEOUT} сек)",
             status_code=500,
@@ -59,40 +63,41 @@ def run_script(script_name: str, args: Optional[List[str]] = None) -> Response:
         )
 
     except Exception as e:
+        logger.exception(f"❌ Помилка запуску скрипта {script_name}")
         return Response(
-            content=f"❌ Невідома помилка запуску {script_name}: {str(e)}",
+            content=f"❌ Помилка запуску {script_name}: {str(e)}",
             status_code=500,
             media_type="text/plain"
         )
 
 
-# --- API маршрути навчання --- #
+# === 📡 Маршрути API ===
 
-@router.post("/api/training/good")
+@router.post("/api/train/good")
 def train_from_good():
     """Навчання на good_dialogs"""
     return run_script("train_from_good.py")
 
 
-@router.post("/api/training/bad")
+@router.post("/api/train/bad")
 def train_from_bad():
     """Навчання на bad_dialogs"""
     return run_script("train_from_bad.py")
 
 
-@router.post("/api/training/feedback")
+@router.post("/api/train/feedback")
 def train_from_feedback():
     """Навчання з урахуванням фідбеків"""
     return run_script("feedback_processor.py")
 
 
-@router.post("/api/training/real")
+@router.post("/api/train/real")
 def train_from_real():
     """Навчання на реальних діалогах"""
     return run_script("training.py", ["real"])
 
 
-@router.post("/api/training/all")
+@router.post("/api/train/all")
 def train_all():
-    """Повне навчання на всіх джерелах"""
+    """Навчання на всіх джерелах"""
     return run_script("training.py", ["all"])

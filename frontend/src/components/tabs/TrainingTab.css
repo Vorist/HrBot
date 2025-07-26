@@ -1,0 +1,58 @@
+.training-tab {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.training-title {
+  font-size: 26px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.training-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.training-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f3f4f6;
+  padding: 16px 20px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+.training-card button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.training-card button:hover {
+  background-color: #1d4ed8;
+}
+
+.training-status {
+  margin-top: 30px;
+  font-size: 16px;
+  color: #111827;
+}
+
+.training-log {
+  background-color: #111827;
+  color: #d1d5db;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 15px;
+  font-family: monospace;
+  max-height: 300px;
+  overflow-y: auto;
+}

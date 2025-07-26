@@ -1,0 +1,156 @@
+/* Загальний контейнер */
+.app-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  background-color: #f9fafb;
+}
+
+/* Головний заголовок */
+.main-title {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 24px;
+}
+
+/* Контейнер для контенту вкладки */
+.tab-content {
+  margin-top: 24px;
+}
+
+/* Стилі карток діалогів */
+.dialog-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Репліки з іконками 👤 🤖 */
+.dialog-line {
+  margin: 4px 0;
+  line-height: 1.5;
+  font-size: 15px;
+}
+
+.dialog-line span {
+  font-weight: bold;
+  margin-right: 6px;
+}
+
+/* Кнопки */
+.button-row {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-danger {
+  background-color: #dc2626;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+.btn-neutral {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.btn-neutral:hover {
+  background-color: #d1d5db;
+}
+
+/* Активна вкладка */
+.tab-buttons .btn-active {
+  background-color: #1d4ed8;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Текстові поля та textarea */
+.input-text,
+.textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 15px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+.textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Візуальне відділення */
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #111827;
+}
+
+.feedback-comment {
+  background-color: #f3f4f6;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-style: italic;
+  margin-top: 6px;
+}
+
+/* Стилі для логів (у навчанні) */
+.log-box {
+  background-color: #111827;
+  color: #d1d5db;
+  font-family: monospace;
+  padding: 12px;
+  border-radius: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 20px;
+  white-space: pre-wrap;
+  border: 1px solid #374151;
+}
+
+/* Вкладки */
+.tab-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}

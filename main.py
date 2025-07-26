@@ -6,18 +6,22 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
 
-# 🔌 Імпорт API-маршрутів
-from api.real_dialogs import router as real_dialogs_router
-from api.strategies import router as strategies_router
+# === 📦 Імпорт API-маршрутів ===
+from backend.api.real_dialogs import router as real_dialogs_router
+from backend.api.strategies import router as strategies_router
+from backend.api.good_dialogs import router as good_dialogs_router
+from backend.api.bad_dialogs import router as bad_dialogs_router
+from backend.api.feedback import router as feedback_router
+from backend.api.training import router as trainer_router
 
-# 🔧 Ініціалізація FastAPI
+# === 🚀 Ініціалізація FastAPI ===
 app = FastAPI(
     title="HR Bot API",
-    description="API для взаємодії з реальними діалогами та стратегіями",
+    description="API для керування діалогами, стратегіями та навчанням бота",
     version="1.0.0"
 )
 
-# 🎯 Дозволяємо запити з фронтенду (локально або прод)
+# === 🌐 Дозвіл CORS для фронтенду ===
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "*"],
@@ -26,21 +30,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 🔗 Реєстрація API-маршрутів
-app.include_router(real_dialogs_router, prefix="/api/real-dialogs")
-app.include_router(strategies_router, prefix="/api/strategies")
+# === 🔗 Підключення API без додаткових prefix (вони вже є в файлах) ===
+app.include_router(real_dialogs_router)
+app.include_router(good_dialogs_router)
+app.include_router(bad_dialogs_router)
+app.include_router(feedback_router)
+app.include_router(strategies_router)
+app.include_router(trainer_router)
 
-# 🌍 Видача React фронтенду (у продакшені)
+# === 🖼️ Подача фронтенду (React) у продакшені ===
 frontend_dist = os.path.join("frontend", "dist")
+index_html = os.path.join(frontend_dist, "index.html")
 
-if os.path.exists(frontend_dist):
+if os.path.exists(index_html):
     app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
 
     @app.get("/")
     async def serve_index():
-        return FileResponse(os.path.join(frontend_dist, "index.html"))
+        return FileResponse(index_html)
 
-    print(f"🚀 Frontend доступний з {frontend_dist}")
+    print(f"✅ Фронтенд знайдено й доступний: {frontend_dist}")
 else:
-    print("⚠️ Папка фронтенду не знайдена — frontend не буде відданий.")
-
+    print("⚠️ Папка frontend/dist або index.html не знайдена — фронтенд не буде відданий.")

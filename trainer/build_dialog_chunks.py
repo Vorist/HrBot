@@ -1,48 +1,30 @@
-# trainer/build_dialog_chunks.py
-
 import os
 import json
-import sys
 import hashlib
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
-
-from config import REAL_DIALOGS_PATH, DIALOG_CHUNKS_PATH
-
+REAL_DIALOGS_TXT_PATH = "data/real_dialogs.txt"
+DIALOG_CHUNKS_PATH = "data/dialog_chunks.json"
 USED_DIALOGS_PATH = "data/used_real_dialogs.json"
 
-# --- 🔐 Хешування для унікальності --- #
 def hash_dialog(dialog_text):
     return hashlib.md5(dialog_text.encode("utf-8")).hexdigest()
 
-# --- 🧼 Очищення тексту --- #
 def format_text(text):
     return text.strip().replace("  ", " ")
 
-# --- 📥 Визначення джерела діалогу --- #
-def detect_source(dialog_text):
-    first = dialog_text.strip().split("\n")[0]
-    if first.startswith("📥 Джерело: "):
-        return first.replace("📥 Джерело: ", "").strip()
+def detect_source(dialog_lines):
+    for line in dialog_lines:
+        if line.lower().startswith("source:"):
+            return line.split(":", 1)[-1].strip()
     return "невідомо"
 
-# --- 📁 Завантаження діалогів --- #
-def load_real_dialogs():
-    if not os.path.exists(REAL_DIALOGS_PATH):
-        print(f"❌ Файл не знайдено: {REAL_DIALOGS_PATH}")
-        return []
-    with open(REAL_DIALOGS_PATH, "r", encoding="utf-8") as f:
-        raw = f.read().strip()
-    return [d.strip() for d in raw.split("\n\n") if d.strip()]
-
-# --- 🧾 Завантаження використаних хешів --- #
 def load_used_hashes():
     if os.path.exists(USED_DIALOGS_PATH):
         try:
             with open(USED_DIALOGS_PATH, "r", encoding="utf-8") as f:
                 return set(json.load(f))
-        except Exception as e:
-            print(f"⚠️ Не вдалося завантажити used_real_dialogs.json: {e}")
+        except Exception:
+            return set()
     return set()
 
 def save_used_hashes(hashes):
@@ -50,34 +32,47 @@ def save_used_hashes(hashes):
     with open(USED_DIALOGS_PATH, "w", encoding="utf-8") as f:
         json.dump(list(hashes), f, ensure_ascii=False, indent=2)
 
-# --- 🧩 Розбиття діалогу на фрагменти --- #
-def split_dialog_into_chunks(dialog_text):
-    source = detect_source(dialog_text)
-    lines = dialog_text.strip().split("\n")[1:]  # пропускаємо перший рядок
+def load_real_dialog_blocks():
+    if not os.path.exists(REAL_DIALOGS_TXT_PATH):
+        print(f"❌ Файл не знайдено: {REAL_DIALOGS_TXT_PATH}")
+        return []
+
+    with open(REAL_DIALOGS_TXT_PATH, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    blocks = [b.strip() for b in content.split("\n\n") if b.strip()]
+    return [block.splitlines() for block in blocks]
+
+def split_dialog_into_chunks(dialog_lines):
+    source = detect_source(dialog_lines)
     chunks = []
 
-    for line in lines:
-        clean = format_text(line)
-        if clean:
-            chunks.append({
-                "text": clean,
-                "source": source
-            })
+    for line in dialog_lines:
+        line = line.strip()
+        if line.lower().startswith("source:"):
+            continue
+        if line.lower().startswith("bot"):
+            text = format_text(line[3:].strip(" :"))
+            chunks.append({"text": f"🤖 {text}", "source": source})
+        elif line.lower().startswith("user"):
+            text = format_text(line[4:].strip(" :"))
+            chunks.append({"text": f"👤 {text}", "source": source})
+
     return chunks
 
-# --- 🧠 Основна функція --- #
 def build_dialog_chunks():
-    dialogs = load_real_dialogs()
+    dialog_blocks = load_real_dialog_blocks()
     used_hashes = load_used_hashes()
 
     new_chunks = []
     new_hashes = set()
 
-    for dialog in dialogs:
-        h = hash_dialog(dialog)
+    for lines in dialog_blocks:
+        dialog_text = "\n".join(lines)
+        h = hash_dialog(dialog_text)
         if h in used_hashes:
             continue
-        new_chunks.extend(split_dialog_into_chunks(dialog))
+        new_chunks.extend(split_dialog_into_chunks(lines))
         new_hashes.add(h)
 
     if not new_chunks:
@@ -92,6 +87,5 @@ def build_dialog_chunks():
     save_used_hashes(used_hashes.union(new_hashes))
     print(f"✅ Додано {len(new_chunks)} нових фрагментів → {DIALOG_CHUNKS_PATH}")
 
-# --- ▶️ Запуск ---
 if __name__ == "__main__":
     build_dialog_chunks()

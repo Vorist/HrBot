@@ -1,0 +1,44 @@
+.custom-button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-weight: 600;
+  min-width: 100px;
+}
+
+.custom-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Варианты кнопок */
+.custom-button.primary {
+  background-color: #2563eb;
+  color: #fff;
+}
+
+.custom-button.primary:hover {
+  background-color: #1d4ed8;
+}
+
+.custom-button.danger {
+  background-color: #dc2626;
+  color: #fff;
+}
+
+.custom-button.danger:hover {
+  background-color: #b91c1c;
+}
+
+.custom-button.neutral {
+  background-color: #f3f4f6;
+  color: #111827;
+  border: 1px solid #d1d5db;
+}
+
+.custom-button.neutral:hover {
+  background-color: #e5e7eb;
+}

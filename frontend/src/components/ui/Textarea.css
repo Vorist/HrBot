@@ -1,0 +1,21 @@
+.custom-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.2s ease-in-out;
+  font-family: inherit;
+}
+
+.custom-textarea:focus {
+  border-color: #2563eb;
+  outline: none;
+  background-color: #f9fafb;
+}
+
+.custom-textarea::placeholder {
+  color: #9ca3af;
+}

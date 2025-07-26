@@ -1,12 +1,13 @@
-import React from "react";
-import "./styles.css";
+// frontend/src/components/ui/button.jsx
+import React from 'react';
+import './Button.css'; // якщо є стилі
 
-export function Button({ children, onClick, disabled = false, variant = "default", size = "md", className = "", ...props }) {
+export function Button({ children, onClick, type = 'button', className = '', ...props }) {
   return (
     <button
-      className={`btn ${variant} ${size} ${className}`}
+      type={type}
       onClick={onClick}
-      disabled={disabled}
+      className={`custom-button ${className}`}
       {...props}
     >
       {children}

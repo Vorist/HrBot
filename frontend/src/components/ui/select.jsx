@@ -1,13 +1,14 @@
-import "./styles.css";
+import React from 'react';
+import './Select.css';
 
-export function Select({ value, onChange, options = [], className = "", ...props }) {
+const Select = ({ options = [], value, onChange, placeholder = '', className = '' }) => {
   return (
     <select
-      className={`custom-select ${className}`}
       value={value}
       onChange={onChange}
-      {...props}
+      className={`custom-select ${className}`}
     >
+      {placeholder && <option value="">{placeholder}</option>}
       {options.map((opt, idx) => (
         <option key={idx} value={opt.value || opt}>
           {opt.label || opt}
@@ -15,4 +16,6 @@ export function Select({ value, onChange, options = [], className = "", ...props
       ))}
     </select>
   );
-}
+};
+
+export default Select;

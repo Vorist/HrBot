@@ -1,9 +1,12 @@
-import "./styles.css";
+import React from 'react';
+import './Label.css';
 
-export function Label({ htmlFor, children, className = "", ...props }) {
+const Label = ({ children, htmlFor = '', className = '' }) => {
   return (
-    <label htmlFor={htmlFor} className={`custom-label ${className}`} {...props}>
+    <label htmlFor={htmlFor} className={`custom-label ${className}`}>
       {children}
     </label>
   );
-}
+};
+
+export default Label;

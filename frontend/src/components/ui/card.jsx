@@ -1,16 +1,10 @@
-import "./styles.css";
+// frontend/src/components/ui/card.jsx
+import React from 'react';
+import './Card.css'; // якщо є стилі
 
-export function Card({ children, className = "", ...props }) {
+export function Card({ children, className = '', ...props }) {
   return (
     <div className={`custom-card ${className}`} {...props}>
-      {children}
-    </div>
-  );
-}
-
-export function CardContent({ children, className = "", ...props }) {
-  return (
-    <div className={`custom-card-content ${className}`} {...props}>
       {children}
     </div>
   );

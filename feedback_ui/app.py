@@ -16,24 +16,28 @@ from config import (
 from trainer.feedback_processor import process_feedbacks
 from trainer.learner import learn_from_dialogs
 
-
-# --- 🔧 Ініціалізація FastAPI ---
+# === 🔧 Ініціалізація FastAPI ===
 app = FastAPI()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
-# --- 📂 Завантаження JSONL-файлу ---
+# === 📂 Завантаження JSONL-файлів ===
 def load_jsonl(path):
     if not os.path.exists(path):
         return []
-    with open(path, "r", encoding="utf-8") as f:
-        return [json.loads(line) for line in f if line.strip()]
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return [json.loads(line) for line in f if line.strip()]
+    except Exception as e:
+        print(f"⚠️ Помилка читання {path}: {e}")
+        return []
 
-
-# --- 📄 Головна сторінка інтерфейсу ---
+# === 🏠 Головна сторінка з діалогами ===
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, type: str = "good", focus: int = -1):
     dialog_paths = {
@@ -42,6 +46,7 @@ async def index(request: Request, type: str = "good", focus: int = -1):
         "real": REAL_DIALOGS_PATH
     }
     selected_path = dialog_paths.get(type, GOOD_DIALOGS_PATH)
+
     raw_dialogs = load_jsonl(selected_path)
     feedbacks = load_jsonl(FEEDBACK_COMMENTS_PATH)
 
@@ -71,8 +76,7 @@ async def index(request: Request, type: str = "good", focus: int = -1):
         "feedbacks": feedback_lookup
     })
 
-
-# --- 💬 Обробка нових коментарів ---
+# === 💬 Додавання коментаря до репліки ===
 @app.post("/comment")
 async def comment(
     request: Request,
@@ -89,9 +93,16 @@ async def comment(
         "comment": comment
     }
 
-    with open(FEEDBACK_COMMENTS_PATH, "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    # Уникнення дублікатів
+    try:
+        existing = load_jsonl(FEEDBACK_COMMENTS_PATH)
+        if entry not in existing:
+            with open(FEEDBACK_COMMENTS_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception as e:
+        print(f"⚠️ Не вдалося зберегти фідбек: {e}")
 
+    # 🔁 Запускаємо обробку
     process_feedbacks()
     learn_from_dialogs()
 
@@ -100,8 +111,7 @@ async def comment(
         status_code=303
     )
 
-
-# --- 🔁 Запуск ---
+# === 🚀 Запуск (як скрипта) ===
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("feedback_ui.app:app", host="127.0.0.1", port=8000, reload=True)

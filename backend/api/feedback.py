@@ -1,93 +1,90 @@
-import os
-import json
-from datetime import datetime
-from typing import List, Literal
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from typing import List, Literal, Optional
+from datetime import datetime
+import os
+import json
+import hashlib
+import logging
 
-from config import FEEDBACK_LESSONS_PATH
+from config import FEEDBACK_COMMENTS_PATH, FEEDBACK_LESSONS_PATH
+from backend.utils.jsonl_utils import append_jsonl, load_jsonl, save_jsonl, validate_dialog
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
-# ---------- МОДЕЛІ ---------- #
+# ---------- 📦 Моделі ---------- #
+
 class FeedbackItem(BaseModel):
     dialog: dict
     comment: str
     status: Literal["waiting", "applied", "rejected"] = "waiting"
     from_: Literal["good", "bad", "real", "refined", "manual"] = "manual"
-    timestamp: str | None = None
-
+    timestamp: Optional[str] = None
+    dialog_id: Optional[str] = None
 
 class FeedbackUpdate(BaseModel):
     index: int
-    comment: str | None = None
-    status: Literal["waiting", "applied", "rejected"] | None = None
+    comment: Optional[str] = None
+    status: Optional[Literal["waiting", "applied", "rejected"]] = None
 
+# ---------- 📁 Функції ---------- #
 
-# ---------- ДОПОМІЖНІ ФУНКЦІЇ ---------- #
-def load_feedback() -> List[dict]:
-    """Завантажити список фідбеків із JSONL"""
-    if not os.path.exists(FEEDBACK_LESSONS_PATH):
-        return []
-    with open(FEEDBACK_LESSONS_PATH, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-    return [json.loads(line) for line in lines if line.strip()]
+def get_dialog_hash(dialog: dict) -> str:
+    return hashlib.md5(json.dumps(dialog, sort_keys=True).encode("utf-8")).hexdigest()
 
+# ---------- 🔗 API ---------- #
 
-def save_feedback(feedbacks: List[dict]):
-    """Зберегти список фідбеків у JSONL"""
-    with open(FEEDBACK_LESSONS_PATH, "w", encoding="utf-8") as f:
-        for item in feedbacks:
-            f.write(json.dumps(item, ensure_ascii=False) + "\n")
-
-
-# ---------- API ---------- #
-
-@router.get("/api/feedback")
+@router.get("/")
 def get_feedback():
-    """Отримати всі фідбеки"""
-    return load_feedback()
+    """📥 Отримати всі фідбеки (коментарі менеджера)"""
+    logger.info("📥 Отримання всіх фідбеків")
+    return load_jsonl(FEEDBACK_COMMENTS_PATH)
 
-
-@router.post("/api/feedback")
+@router.post("/")
 def add_feedback(item: FeedbackItem):
-    """Додати новий фідбек"""
+    """➕ Додати новий фідбек"""
     if not item.comment.strip():
         raise HTTPException(status_code=400, detail="Коментар не може бути порожнім")
     if not isinstance(item.dialog, dict) or "dialog" not in item.dialog:
         raise HTTPException(status_code=400, detail="Некоректна структура діалогу")
 
-    item.timestamp = item.timestamp or datetime.now().isoformat()
+    dialog_list = item.dialog.get("dialog")
+    if not isinstance(dialog_list, list) or not validate_dialog(dialog_list):
+        raise HTTPException(status_code=422, detail="Діалог має містити чергування user → bot → user → ...")
 
-    feedbacks = load_feedback()
+    item.timestamp = item.timestamp or datetime.now().isoformat()
+    item.dialog_id = get_dialog_hash(item.dialog)
+
+    feedbacks = load_jsonl(FEEDBACK_COMMENTS_PATH)
+
+    if any(fb.get("dialog_id") == item.dialog_id for fb in feedbacks):
+        raise HTTPException(status_code=409, detail="Фідбек для цього діалогу вже існує")
+
     feedbacks.append(item.dict())
-    save_feedback(feedbacks)
+    save_jsonl(FEEDBACK_COMMENTS_PATH, feedbacks)
+    logger.info("✅ Фідбек успішно додано")
 
     return {
         "message": "✅ Фідбек збережено",
         "total": len(feedbacks)
     }
 
-
-@router.delete("/api/feedback/{index}")
+@router.delete("/{index}")
 def delete_feedback(index: int):
-    """Видалити фідбек за індексом"""
-    feedbacks = load_feedback()
+    """🗑️ Видалити фідбек за індексом"""
+    feedbacks = load_jsonl(FEEDBACK_COMMENTS_PATH)
     if 0 <= index < len(feedbacks):
         deleted = feedbacks.pop(index)
-        save_feedback(feedbacks)
-        return {
-            "message": "🗑️ Видалено",
-            "deleted": deleted
-        }
+        save_jsonl(FEEDBACK_COMMENTS_PATH, feedbacks)
+        logger.info(f"🗑️ Видалено фідбек з індексом {index}")
+        return {"message": "🗑️ Видалено", "deleted": deleted}
     raise HTTPException(status_code=404, detail="Фідбек не знайдено")
 
-
-@router.post("/api/feedback/update")
+@router.post("/update")
 def update_feedback(update: FeedbackUpdate):
-    """Оновити коментар або статус фідбеку"""
-    feedbacks = load_feedback()
+    """✏️ Оновити фідбек"""
+    feedbacks = load_jsonl(FEEDBACK_COMMENTS_PATH)
     if not (0 <= update.index < len(feedbacks)):
         raise HTTPException(status_code=404, detail="Фідбек не знайдено")
 
@@ -97,5 +94,6 @@ def update_feedback(update: FeedbackUpdate):
     if update.status is not None:
         feedbacks[update.index]["status"] = update.status
 
-    save_feedback(feedbacks)
+    save_jsonl(FEEDBACK_COMMENTS_PATH, feedbacks)
+    logger.info(f"✏️ Оновлено фідбек з індексом {update.index}")
     return {"message": "✏️ Фідбек оновлено"}

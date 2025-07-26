@@ -24,11 +24,9 @@ from scripts.convert_real_dialogs import load_real_dialogs_from_txt
 
 client = OpenAI()
 
-# --- 🧠 Завантаження системного промпту ---
 with open(SYSTEM_PROMPT_PATH, "r", encoding="utf-8") as f:
     SYSTEM_PROMPT = f.read().strip()
 
-# --- ✅ GOOD приклади ---
 try:
     with open(GOOD_DIALOGS_PATH, "r", encoding="utf-8") as f:
         good_chunks = [json.loads(line) for line in f if line.strip()]
@@ -39,7 +37,6 @@ except Exception as e:
     good_index = None
     good_texts = []
 
-# --- ❌ BAD приклади ---
 try:
     with open(BAD_DIALOGS_PATH, "r", encoding="utf-8") as f:
         bad_chunks = [json.loads(line) for line in f if line.strip()]
@@ -50,27 +47,21 @@ except Exception as e:
     bad_index = None
     bad_texts = []
 
-# --- 📘 Уроки з фідбеку ---
 try:
     with open(FEEDBACK_LESSONS_PATH, "r", encoding="utf-8") as f:
-        feedback_lessons = json.load(f)
+        feedback_lessons = [json.loads(line) for line in f if line.strip()]
 except Exception:
     feedback_lessons = []
 
-# --- 🎯 Реальні діалоги (з txt напряму) ---
 try:
     raw_texts = load_real_dialogs_from_txt(REAL_DIALOGS_TXT_PATH)
-
-    # 🔍 Очищення: залишаємо лише непорожні рядки
     real_texts = [t.strip() for t in raw_texts if isinstance(t, str) and t.strip()]
 
     if not real_texts:
         raise ValueError("Список real_texts порожній після очищення.")
 
     if not os.path.exists(REAL_INDEX_PATH):
-        print("⚠️ Індекс реальних діалогів не знайдено. Створюємо новий...")
-
-        # 🧠 Генеруємо ембедінги батчами (OpenAI обмежує кількість символів)
+        print("⚠️ Індекс реальних діалогів не знайдено. Створюється новий...")
         embeddings = client.embeddings.create(
             model="text-embedding-3-small",
             input=real_texts
@@ -87,12 +78,6 @@ except Exception as e:
     real_texts = []
     real_index = None
 
-
-# --- 🛠 Лог ---
-def log(message):
-    print(message)
-
-# --- 🧩 Поділ діалогу на чанки ---
 def split_dialog_into_chunks(dialog_text: str, label: str = "") -> list:
     lines = dialog_text.strip().split("\n")
     chunks = []
@@ -107,50 +92,30 @@ def split_dialog_into_chunks(dialog_text: str, label: str = "") -> list:
         chunks.append({"text": "\n".join(buffer), "label": label})
     return chunks
 
-# --- 🔍 Пошук прикладів ---
-def search_good_examples(query, top_k=3):
-    if not good_index or not good_texts:
-        return []
-    if not isinstance(query, str) or not query.strip():
+def search_examples(query, index, texts, top_k):
+    if not index or not texts or not isinstance(query, str) or not query.strip():
         return []
     try:
-        emb = client.embeddings.create(model="text-embedding-3-small", input=[query.strip()]).data[0].embedding
+        emb = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=[query.strip()]
+        ).data[0].embedding
         emb_np = np.array([emb], dtype=np.float32)
-        distances, indices = good_index.search(emb_np, top_k)
-        return [good_texts[i] for i in indices[0] if i < len(good_texts)]
+        distances, indices = index.search(emb_np, top_k)
+        return [texts[i] for i in indices[0] if i < len(texts)]
     except Exception as e:
-        print(f"⚠️ Помилка пошуку good_examples: {e}")
+        print(f"⚠️ Помилка пошуку: {e}")
         return []
+
+def search_good_examples(query, top_k=3):
+    return search_examples(query, good_index, good_texts, top_k)
 
 def search_bad_examples(query, top_k=2):
-    if not bad_index or not bad_texts:
-        return []
-    if not isinstance(query, str) or not query.strip():
-        return []
-    try:
-        emb = client.embeddings.create(model="text-embedding-3-small", input=[query.strip()]).data[0].embedding
-        emb_np = np.array([emb], dtype=np.float32)
-        distances, indices = bad_index.search(emb_np, top_k)
-        return [bad_texts[i] for i in indices[0] if i < len(bad_texts)]
-    except Exception as e:
-        print(f"⚠️ Помилка пошуку bad_examples: {e}")
-        return []
+    return search_examples(query, bad_index, bad_texts, top_k)
 
 def search_real_examples(query, top_k=2):
-    if not real_index or not real_texts:
-        return []
-    if not isinstance(query, str) or not query.strip():
-        return []
-    try:
-        emb = client.embeddings.create(model="text-embedding-3-small", input=[query.strip()]).data[0].embedding
-        emb_np = np.array([emb], dtype=np.float32)
-        distances, indices = real_index.search(emb_np, top_k)
-        return [real_texts[i] for i in indices[0] if i < len(real_texts)]
-    except Exception as e:
-        print(f"⚠️ Помилка пошуку real_examples: {e}")
-        return []
+    return search_examples(query, real_index, real_texts, top_k)
 
-# --- 🧱 Побудова prompt для OpenAI ---
 def build_messages(chat_id, user_input, context_chunks, memory):
     history = get_history(memory, chat_id)
     meta = memory.get(str(chat_id), {}).get("_meta", {})
@@ -188,12 +153,11 @@ def build_messages(chat_id, user_input, context_chunks, memory):
     for lesson in feedback_lessons:
         pattern = lesson.get("pattern", "").lower()
         if pattern in user_input.lower():
-            messages.append({"role": "system", "content": f"Порада: {lesson['advice']}"})
+            messages.append({"role": "system", "content": f"Порада: {lesson['recommendation']}"})
 
     messages.append({"role": "user", "content": user_input})
     return messages
 
-# --- 🤖 Отримання відповіді від OpenAI ---
 def get_openai_response(messages):
     try:
         response = client.chat.completions.create(
@@ -207,11 +171,9 @@ def get_openai_response(messages):
     except Exception as e:
         return f"⚠️ Вибач, сталася помилка: {e}"
 
-# --- 🔧 Форматування тексту ---
 def format_text(text):
     return text.replace("\n\n", "\n").strip()
 
-# --- 🕵️‍♂️ Визначення джерела кандидата ---
 def detect_source(dialog_text: str) -> str:
     text = dialog_text.lower()
     if any(word in text for word in ["телеграм", "тг", "канал", "оголошення в телеграмі"]):
@@ -226,14 +188,13 @@ def detect_source(dialog_text: str) -> str:
         return "other"
     return "unknown"
 
-# --- 📥 Парсинг тексту діалогу ---
 def parse_dialog_text(text):
     lines = text.strip().splitlines()
     parsed = []
     for line in lines:
         line = line.strip()
-        if line.startswith("👤"):
+        if line.startswith("\ud83d\udc64"):
             parsed.append({"role": "user", "text": line[1:].strip()})
-        elif line.startswith("🤖"):
+        elif line.startswith("\ud83e\udde0"):
             parsed.append({"role": "bot", "text": line[1:].strip()})
     return parsed
