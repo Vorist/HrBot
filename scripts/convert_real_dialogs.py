@@ -33,7 +33,7 @@ def save_used_dialogs(used):
 
 def parse_dialog_block(lines):
     source = None
-    dialog_lines = []
+    dialog = []
 
     for line in lines:
         line = line.strip()
@@ -42,16 +42,16 @@ def parse_dialog_block(lines):
         if line.lower().startswith("source:"):
             source = line.split(":", 1)[-1].strip()
         elif line.lower().startswith("bot"):
-            dialog_lines.append(f"🤖 {line[3:].strip(' :')}")
+            dialog.append(f"🤖 {line[3:].strip(' :')}")
         elif line.lower().startswith("user"):
-            dialog_lines.append(f"👤 {line[4:].strip(' :')}")
+            dialog.append(f"👤 {line[4:].strip(' :')}")
         elif line.startswith("🤖") or line.startswith("👤"):
-            dialog_lines.append(line)
+            dialog.append(line)
 
-    if not source or not dialog_lines:
+    if not source or not dialog:
         return None
 
-    return f"📥 Джерело: {source}\n" + "\n".join(dialog_lines)
+    return f"📥 Джерело: {source}\n" + "\n".join(dialog)
 
 def load_real_dialogs_from_txt(path):
     with open(path, "r", encoding="utf-8") as f:
@@ -72,7 +72,7 @@ def convert():
         formatted = parse_dialog_block(lines)
         if not formatted or formatted in used:
             continue
-        new_items.append({"text": formatted})
+        new_items.append(formatted)
         used[formatted] = True
 
     if not new_items:
@@ -82,12 +82,11 @@ def convert():
     try:
         os.makedirs(os.path.dirname(REAL_DIALOGS_PATH), exist_ok=True)
         with open(REAL_DIALOGS_PATH, "a", encoding="utf-8") as f:
-            for item in new_items:
-                f.write(json.dumps(item, ensure_ascii=False) + "\n")
+            f.write("\n\n".join(new_items) + "\n\n")
         save_used_dialogs(used)
         safe_print(f"✅ Додано {len(new_items)} нових діалогів → {REAL_DIALOGS_PATH}")
     except Exception as e:
-        safe_print(f"❌ Помилка запису JSONL: {e}")
+        safe_print(f"❌ Помилка запису: {e}")
 
 if __name__ == "__main__":
     convert()

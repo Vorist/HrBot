@@ -1,29 +1,43 @@
+// frontend/src/components/tabs/TrainingTab.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
-import '@/components/ui/TrainingTab.css'; // стилі до цієї вкладки
+import './TrainingTab.css';
 
 const trainingOptions = [
-  { label: "✅ Навчити на good_dialogs", endpoint: "/api/train/good" },
-  { label: "⚠️ Навчити на bad_dialogs", endpoint: "/api/train/bad" },
-  { label: "💬 Навчити з урахуванням фідбеку", endpoint: "/api/train/feedback" },
-  { label: "📥 Навчити на real_dialogs", endpoint: "/api/train/real" },
-  { label: "🧠 Повне навчання", endpoint: "/api/train/all" }
+  { label: "✅ Навчити на good_dialogs", endpoint: "/api/training/good" },
+  { label: "⚠️ Навчити на bad_dialogs", endpoint: "/api/training/bad" },
+  { label: "💬 Навчити з урахуванням фідбеку", endpoint: "/api/training/feedback" },
+  { label: "📥 Навчити на real_dialogs", endpoint: "/api/training/real" },
+  { label: "🧠 Повне навчання",         endpoint: "/api/training/all" }
 ];
 
 export default function TrainingTab() {
-  const [status, setStatus] = useState(null);
+  const [status, setStatus] = useState('');
   const [log, setLog] = useState('');
 
   const handleTrain = async (endpoint) => {
-    setStatus("⏳ Навчання запущено...");
+    setStatus('⏳ Навчання запущено...');
     setLog('');
     try {
       const response = await axios.post(endpoint);
-      setStatus("✅ Навчання завершено успішно");
-      setLog(response.data?.log || "✓ Без додаткових повідомлень.");
+      // response.data — это строка stdout
+      const output = typeof response.data === 'string'
+        ? response.data
+        : JSON.stringify(response.data, null, 2);
+      setStatus('✅ Навчання завершено успішно');
+      setLog(output);
     } catch (error) {
-      setStatus("❌ Помилка під час навчання");
-      setLog(error.response?.data?.error || "Невідома помилка.");
+      console.error(error);
+      setStatus('❌ Помилка під час навчання');
+      let errMsg = '';
+      if (error.response) {
+        errMsg = typeof error.response.data === 'string'
+          ? error.response.data
+          : JSON.stringify(error.response.data, null, 2);
+      } else {
+        errMsg = error.message;
+      }
+      setLog(errMsg);
     }
   };
 
@@ -34,8 +48,13 @@ export default function TrainingTab() {
       <div className="training-buttons">
         {trainingOptions.map(({ label, endpoint }) => (
           <div key={endpoint} className="training-card">
-            <span>{label}</span>
-            <button className="custom-button" onClick={() => handleTrain(endpoint)}>Запустити</button>
+            <span className="training-label">{label}</span>
+            <button
+              className="training-run-button"
+              onClick={() => handleTrain(endpoint)}
+            >
+              Запустити
+            </button>
           </div>
         ))}
       </div>

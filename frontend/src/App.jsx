@@ -1,13 +1,14 @@
+// frontend/src/App.jsx
 import React, { useState } from 'react';
-import './App.css';
-import Tabs from './components/Tabs';
+import '@/App.css';
+import Tabs from '@/components/Tabs';
 
-import RealDialogsTab from './components/tabs/RealDialogsTab';
-import GoodDialogsTab from './components/tabs/GoodDialogsTab';
-import BadDialogsTab from './components/tabs/BadDialogsTab';
-import FeedbackTab from './components/tabs/FeedbackTab';
-import StrategiesTab from './components/tabs/StrategiesTab';
-import TrainingTab from './components/tabs/TrainingTab';
+import RealDialogsTab from '@/components/tabs/RealDialogsTab';
+import GoodDialogsTab from '@/components/tabs/GoodDialogsTab';
+import BadDialogsTab from '@/components/tabs/BadDialogsTab';
+import FeedbackTab from '@/components/tabs/FeedbackTab';
+import StrategiesTab from '@/components/tabs/StrategiesTab';
+import TrainingTab from '@/components/tabs/TrainingTab';
 
 function App() {
   const [activeTab, setActiveTab] = useState('real');

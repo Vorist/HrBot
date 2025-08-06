@@ -14,10 +14,18 @@ export default function GoodDialogsTab() {
 
   const fetchDialogs = async () => {
     try {
-      const response = await axios.get('/api/good_dialogs');
-      setDialogs(response.data);
+      const res = await axios.get('/api/good_dialogs');
+      const data = res.data;
+      // API может вернуть либо массив, либо { items: [...] }
+      const items = Array.isArray(data)
+        ? data
+        : Array.isArray(data.items)
+        ? data.items
+        : [];
+      setDialogs(items);
     } catch (error) {
-      console.error('Помилка завантаження хороших діалогів:', error);
+      console.error('❌ Помилка завантаження хороших діалогів:', error);
+      setDialogs([]);
     }
   };
 
@@ -26,7 +34,7 @@ export default function GoodDialogsTab() {
   };
 
   const handleCommentChange = (index, value) => {
-    setComments({ ...comments, [index]: value });
+    setComments((prev) => ({ ...prev, [index]: value }));
   };
 
   const markAsBad = async (index) => {
@@ -35,55 +43,81 @@ export default function GoodDialogsTab() {
         index,
         comment: comments[index] || ''
       });
-      setDialogs(dialogs.filter((_, i) => i !== index));
+      // удалить из списка
+      setDialogs((prev) => prev.filter((_, i) => i !== index));
+      setExpandedIndex(null);
     } catch (error) {
-      console.error('Помилка при фідбеці:', error);
+      console.error('❌ Помилка при фідбеці:', error);
     }
   };
 
-  const confirmGood = async (index) => {
-    try {
-      await axios.post('/api/good_dialogs/confirm', { index });
-    } catch (error) {
-      console.error('Помилка при підтвердженні хорошого діалогу:', error);
-    }
+  const confirmGood = (index) => {
+    // Просто сворачиваем карточку, без вызова API
+    setExpandedIndex(null);
   };
 
   return (
     <div className="good-tab">
       <h2>✅ Хороші діалоги</h2>
-      <div className="dialog-list">
-        {dialogs.map((dialog, index) => (
-          <div key={index} className="dialog-card">
-            <div className="card-header" onClick={() => handleToggle(index)}>
-              👤 {dialog.user || 'Кандидат'}, {dialog.date || 'дата невідома'}
-            </div>
-
-            {expandedIndex === index && (
-              <div className="card-body">
-                <div className="dialog-content">
-                  {dialog.dialog.map((line, i) => (
-                    <div key={i} className="dialog-line">
-                      <strong>{line.role === 'user' ? '👤' : '🤖'}</strong> {line.text}
-                    </div>
-                  ))}
-                </div>
-
-                <textarea
-                  placeholder="💬 Коментар менеджера..."
-                  value={comments[index] || ''}
-                  onChange={(e) => handleCommentChange(index, e.target.value)}
-                />
-
-                <div className="button-group">
-                  <button className="bad" onClick={() => markAsBad(index)}>❌ Позначити як поганий</button>
-                  <button className="confirm" onClick={() => confirmGood(index)}>✅ Залишити як хороший</button>
-                </div>
+      {dialogs.length === 0 ? (
+        <p>📭 Немає хороших діалогів для відображення.</p>
+      ) : (
+        <div className="dialog-list">
+          {dialogs.map((dialog, index) => (
+            <div key={index} className="dialog-card">
+              <div
+                className="card-header"
+                onClick={() => handleToggle(index)}
+              >
+                👤 {dialog.user || 'Кандидат'}, {dialog.date || 'дата невідома'}
               </div>
-            )}
-          </div>
-        ))}
-      </div>
+
+              {expandedIndex === index && (
+                <div className="card-body">
+                  <div className="dialog-content">
+                    {Array.isArray(dialog.dialog) ? (
+                      dialog.dialog.map((line, i) => (
+                        <div key={i} className="dialog-line">
+                          <strong>
+                            {line.role === 'user' ? '👤' : '🤖'}
+                          </strong>{' '}
+                          {line.text}
+                        </div>
+                      ))
+                    ) : (
+                      <p>⚠️ Некоректний формат діалогу</p>
+                    )}
+                  </div>
+
+                  <textarea
+                    className="manager-comment"
+                    placeholder="💬 Коментар менеджера..."
+                    value={comments[index] || ''}
+                    onChange={(e) =>
+                      handleCommentChange(index, e.target.value)
+                    }
+                  />
+
+                  <div className="button-group">
+                    <button
+                      className="bad"
+                      onClick={() => markAsBad(index)}
+                    >
+                      ❌ Позначити як поганий
+                    </button>
+                    <button
+                      className="confirm"
+                      onClick={() => confirmGood(index)}
+                    >
+                      ✅ Залишити як хороший
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

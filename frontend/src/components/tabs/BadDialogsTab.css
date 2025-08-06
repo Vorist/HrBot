@@ -1,34 +1,14 @@
+/* frontend/src/components/tabs/BadDialogsTab.css */
+
 .bad-tab {
   padding: 20px;
   max-width: 900px;
   margin: 0 auto;
 }
 
-.bad-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 30px;
-}
-
-.bad-controls textarea {
-  width: 100%;
-  height: 120px;
-  padding: 10px;
-  font-size: 14px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  resize: vertical;
-}
-
-.bad-controls button {
-  background-color: #2563eb;
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
+.bad-tab h2 {
+  font-size: 26px;
+  margin-bottom: 20px;
 }
 
 .dialog-list {
@@ -37,39 +17,52 @@
   gap: 20px;
 }
 
+/* Карточка каждого диалога */
 .dialog-card {
   background-color: #f3f4f6;
-  border-radius: 10px;
-  padding: 10px;
   border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 16px;
 }
 
-.dialog-header {
-  font-weight: bold;
-  margin-bottom: 10px;
-  color: #111827;
+/* Отступы и оформление строк диалога */
+.dialog-line {
+  margin: 8px 0;
+  font-size: 15px;
+  line-height: 1.4;
 }
 
-.dialog-body {
-  background: white;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  margin-bottom: 10px;
-}
-
+/* Текстовое поле фидбека */
 .dialog-card textarea {
   width: 100%;
-  height: 60px;
-  margin-top: 8px;
-  padding: 8px;
+  min-height: 80px;
+  padding: 10px;
   font-size: 14px;
   border-radius: 6px;
   border: 1px solid #999;
+  resize: vertical;
+  margin-top: 12px;
 }
 
-.btn-group {
+/* Группа кнопок */
+.button-group {
   display: flex;
+  justify-content: flex-end;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 12px;
+}
+
+/* Кнопка отправки */
+button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+button:hover {
+  background-color: #1e40af;
 }

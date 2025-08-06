@@ -7,23 +7,37 @@ export default function StrategiesTab() {
   const [strategies, setStrategies] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedText, setEditedText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const fetchStrategies = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const { data } = await axios.get('/api/strategies');
+      if (!Array.isArray(data)) {
+        throw new Error('Невірний формат відповіді від сервера');
+      }
+      setStrategies(data);
+    } catch (err) {
+      console.error('Помилка завантаження стратегій', err);
+      setError('Не вдалося завантажити стратегії');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchStrategies();
   }, []);
 
-  const fetchStrategies = async () => {
-    try {
-      const response = await axios.get('/api/strategies');
-      setStrategies(response.data);
-    } catch (error) {
-      console.error("Помилка завантаження стратегій", error);
-    }
-  };
-
-  const startEditing = (index, currentText) => {
+  const startEditing = (index) => {
     setEditingIndex(index);
-    setEditedText(currentText);
+    setEditedText(
+      typeof strategies[index]?.improved === 'string'
+        ? strategies[index].improved
+        : ''
+    );
   };
 
   const cancelEditing = () => {
@@ -38,29 +52,46 @@ export default function StrategiesTab() {
         improved: editedText,
       });
       const updated = [...strategies];
-      updated[index].improved = editedText;
+      updated[index] = { ...updated[index], improved: editedText };
       setStrategies(updated);
       cancelEditing();
-    } catch (error) {
-      console.error("Помилка збереження відповіді", error);
+    } catch (err) {
+      console.error('Помилка збереження стратегії', err);
+      setError('Не вдалося зберегти зміни');
     }
+  };
+
+  if (loading) {
+    return <p>Завантаження стратегій...</p>;
+  }
+  if (error) {
+    return <p className="error">{error}</p>;
+  }
+  if (!strategies.length) {
+    return <p>Стратегії відсутні.</p>;
+  }
+
+  // Помощная функция для безопасного извлечения текста
+  const textValue = (field) => {
+    if (typeof field === 'string') return field;
+    if (field && typeof field === 'object' && 'text' in field) return field.text;
+    return '';
   };
 
   return (
     <div className="strategies-tab">
-      <h2 className="strategies-title">📈 Стратегії покращення відповідей
-      </h2>
+      <h2 className="strategies-title">📈 Стратегії покращення відповідей</h2>
 
       {strategies.map((s, i) => (
         <div key={i} className="strategy-card">
           <div className="section">
             <strong>📌 Контекст:</strong>
-            <p>{s.context}</p>
+            <p>{textValue(s.context)}</p>
           </div>
 
           <div className="section original">
             <strong>🧠 Було:</strong>
-            <p>{s.original}</p>
+            <p>{textValue(s.original)}</p>
           </div>
 
           <div className="section improved">
@@ -71,18 +102,27 @@ export default function StrategiesTab() {
                 onChange={(e) => setEditedText(e.target.value)}
               />
             ) : (
-              <p>{s.improved}</p>
+              <p>
+                {textValue(s.improved) || <em>Покращень ще немає</em>}
+              </p>
             )}
           </div>
 
           <div className="section">
             {editingIndex === i ? (
               <>
-                <button className="save" onClick={() => saveImproved(i)}>📂 Зберегти</button>
-                <button className="cancel" onClick={cancelEditing}>❌ Скасувати</button>
+                <button className="save" onClick={() => saveImproved(i)}>
+                  💾 Зберегти
+                </button>
+                <button className="cancel" onClick={cancelEditing}>
+                  ❌ Скасувати
+                </button>
               </>
             ) : (
-              <button className="edit-button" onClick={() => startEditing(i, s.improved)}>
+              <button
+                className="edit-button"
+                onClick={() => startEditing(i)}
+              >
                 ✏️ Редагувати
               </button>
             )}
