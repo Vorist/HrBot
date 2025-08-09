@@ -1,4 +1,12 @@
-# Ініціалізація пакету trainer
+# trainer/__init__.py
+"""
+Ініціалізація trainer-пакету для імпорту зручних точок входу:
+- learn_from_dialogs
+- process_feedbacks, extract_feedback_insights
+- refine_bad_dialogs
+- build_dialog_chunks, build_knowledge_chunks
+- train_on_good_dialogs, train_on_bad_dialogs
+"""
 
 from .learner import learn_from_dialogs
 from .feedback_processor import process_feedbacks, extract_feedback_insights
@@ -7,6 +15,8 @@ from .build_dialog_chunks import build_dialog_chunks
 from .build_knowledge_chunks import build_knowledge_chunks
 from .train_from_good import train_on_good_dialogs
 from .train_from_bad import train_on_bad_dialogs
+
+# Если появятся новые тренировочные пайплайны — просто допиши сюда
 
 __all__ = [
     "learn_from_dialogs",

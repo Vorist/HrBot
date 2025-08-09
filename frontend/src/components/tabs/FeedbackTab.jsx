@@ -4,18 +4,20 @@ import axios from 'axios';
 import './FeedbackTab.css';
 
 export default function FeedbackTab() {
-  const [items, setItems] = useState([]);          // Все записи фідбеку
-  const [comments, setComments] = useState({});    // Чернетки коментарів
-  const [statusMsgs, setStatusMsgs] = useState({}); // Статуси по кожному індексу
+  const [items, setItems] = useState([]);
+  const [comments, setComments] = useState({});
+  const [statusMsgs, setStatusMsgs] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchFeedbackItems();
   }, []);
 
   async function fetchFeedbackItems() {
+    setLoading(true);
     try {
-      const res = await axios.get('/api/feedback');
-      // Беремо тільки ті, що в статусі "waiting"
+      const res = await axios.get('feedback');
+      // Только те, что в статусе "waiting"
       const waiting = Array.isArray(res.data)
         ? res.data.filter((fb) => fb.status === 'waiting')
         : [];
@@ -23,44 +25,44 @@ export default function FeedbackTab() {
     } catch (err) {
       console.error('❌ Помилка завантаження фідбеків:', err);
     }
+    setLoading(false);
   }
 
-  const handleCommentChange = (idx, value) => {
-    setComments((c) => ({ ...c, [idx]: value }));
+  const handleCommentChange = (id, value) => {
+    setComments((c) => ({ ...c, [id]: value }));
   };
 
-  const submitFeedback = async (idx) => {
-    const comment = (comments[idx] || '').trim();
+  const submitFeedback = async (id) => {
+    const comment = (comments[id] || '').trim();
     if (!comment) {
-      setStatusMsgs((s) => ({ ...s, [idx]: '❗ Коментар не може бути порожнім' }));
+      setStatusMsgs((s) => ({ ...s, [id]: '❗ Коментар не може бути порожнім' }));
       return;
     }
     try {
-      // Оновлюємо існуючий фідбек
-      await axios.post('/api/feedback/update', {
-        index: idx,
+      await axios.post('feedback/update', {
+        id,
         comment,
-        status: 'applied'
+        status: 'applied',
       });
-      setStatusMsgs((s) => ({ ...s, [idx]: '✅ Збережено' }));
-      // Прибрати зі списку
-      setItems((its) => its.filter((_, i) => i !== idx));
+      setStatusMsgs((s) => ({ ...s, [id]: '✅ Збережено' }));
+      setItems((its) => its.filter((fb) => fb.id !== id));
     } catch (err) {
       console.error('❌ Помилка при збереженні фідбеку:', err);
-      setStatusMsgs((s) => ({ ...s, [idx]: '⚠️ Помилка збереження' }));
+      setStatusMsgs((s) => ({ ...s, [id]: '⚠️ Помилка збереження' }));
     }
   };
 
   return (
     <div className="feedback-tab">
       <h2>💬 Фідбек до діалогів</h2>
-
-      {items.length === 0 ? (
+      {loading ? (
+        <p className="status">⏳ Завантаження...</p>
+      ) : items.length === 0 ? (
         <p className="empty-message">✅ Немає діалогів, які потребують фідбеку</p>
       ) : (
         <div className="dialog-list">
-          {items.map((item, idx) => (
-            <div key={idx} className="dialog-card">
+          {items.map((item) => (
+            <div key={item.id} className="dialog-card">
               <div className="dialog-content">
                 {Array.isArray(item.dialog) ? (
                   item.dialog.map((line, i) => (
@@ -75,19 +77,26 @@ export default function FeedbackTab() {
 
               <textarea
                 placeholder="📝 Напишіть коментар по діалогу..."
-                value={comments[idx] || ''}
-                onChange={(e) => handleCommentChange(idx, e.target.value)}
+                value={comments[item.id] || ''}
+                onChange={(e) => handleCommentChange(item.id, e.target.value)}
               />
 
               <button
                 className="submit-btn"
-                onClick={() => submitFeedback(idx)}
+                onClick={() => submitFeedback(item.id)}
+                disabled={!!statusMsgs[item.id] && statusMsgs[item.id].startsWith('✅')}
               >
                 💾 Зберегти фідбек
               </button>
 
-              {statusMsgs[idx] && (
-                <div className="status-message">{statusMsgs[idx]}</div>
+              {statusMsgs[item.id] && (
+                <div
+                  className={`status-message${
+                    statusMsgs[item.id].startsWith('✅') ? ' success' : statusMsgs[item.id].startsWith('⚠️') ? ' error' : ''
+                  }`}
+                >
+                  {statusMsgs[item.id]}
+                </div>
               )}
             </div>
           ))}

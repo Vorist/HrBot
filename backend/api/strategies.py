@@ -2,39 +2,33 @@
 
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from config import REFINED_BAD_PATH, FEEDBACK_LESSONS_PATH
 from backend.utils.jsonl_utils import load_jsonl, save_jsonl, append_jsonl
 
-router = APIRouter(
-    prefix="/api/strategies",
-    tags=["Strategies"]
-)
+router = APIRouter()
 logger = logging.getLogger(__name__)
 
+# === 📦 Pydantic-модели ===
+class StrategyItem(BaseModel):
+    context: str = Field(..., description="Контекст, в якому виникла проблема")
+    original: str = Field(..., description="Початкова (погана) відповідь")
+    improved: str = Field("", description="Покращена відповідь")
+    strategy: str = Field("", description="Стратегія/прийом для покращення")
+    feedback: List[str] = Field(default_factory=list, description="Коментарі менеджера")
+    updated_by: str = Field("HR", description="Ким оновлено")
+    timestamp: str = Field("", description="Дата останнього оновлення")
+    feedback_linked: bool = Field(False, description="Чи пов'язано з фідбеком")
 
-# === 📦 Pydantic-моделі ===
 class StrategyUpdate(BaseModel):
     index: int
     improved: str
 
-
-class StrategyItem(BaseModel):
-    context: str
-    original: str
-    improved: str = ""
-    strategy: str = ""
-    feedback: List[str] = []
-    updated_by: str = "HR"
-    timestamp: str = ""
-    feedback_linked: bool = False
-
-
-# === 🔧 Функція для оновлення стратегії ===
+# === 🔧 Утиліта для оновлення стратегії ===
 def enrich_strategy(entry: dict, improved_text: str = "") -> dict:
     entry["improved"] = improved_text.strip()
     entry["timestamp"] = datetime.now().isoformat()
@@ -42,12 +36,11 @@ def enrich_strategy(entry: dict, improved_text: str = "") -> dict:
     entry["feedback_linked"] = True
     return entry
 
-
-# === 📥 GET /api/strategies/ ===
-@router.get("/", response_model=List[StrategyItem])
+# === 📥 GET /api/strategies ===
+@router.get("/", response_model=List[StrategyItem], summary="Отримати всі стратегії")
 def get_strategies():
     """
-    Повертає список стратегій із refined_bad_dialogs.jsonl
+    Повертає список стратегій із refined_bad_dialogs.jsonl.
     """
     try:
         strategies = load_jsonl(REFINED_BAD_PATH)
@@ -62,13 +55,12 @@ def get_strategies():
         logger.exception("❌ Помилка при завантаженні стратегій")
         raise HTTPException(status_code=500, detail="Не вдалося завантажити стратегії")
 
-
 # === ✏️ POST /api/strategies/update ===
-@router.post("/update")
+@router.post("/update", summary="Оновити покращену відповідь у стратегії")
 def update_strategy(payload: StrategyUpdate):
     """
-    Оновлює поле `improved` у стратегії з індексом payload.index
-    та зберігає копію в feedback_lessons.jsonl
+    Оновлює поле improved для стратегії за індексом
+    та зберігає копію у feedback_lessons.jsonl для історії.
     """
     try:
         strategies = load_jsonl(REFINED_BAD_PATH)
@@ -76,20 +68,20 @@ def update_strategy(payload: StrategyUpdate):
             logger.error("❌ Невалідний індекс при оновленні")
             raise HTTPException(status_code=400, detail="Невалідний індекс")
 
-        updated = enrich_strategy(strategies[payload.index], payload.improved)
-        strategies[payload.index] = updated
+        updated_entry = enrich_strategy(strategies[payload.index], payload.improved)
+        strategies[payload.index] = updated_entry
         save_jsonl(REFINED_BAD_PATH, strategies)
 
         feedback_entry = {
             "from": "refined_bad_dialogs",
             "status": "improved",
             "comment": "Покращено вручну через інтерфейс",
-            "dialog": updated,
+            "dialog": updated_entry,
             "timestamp": datetime.now().isoformat(),
         }
         append_jsonl(FEEDBACK_LESSONS_PATH, feedback_entry)
 
-        logger.info("✅ Стратегію оновлено та збережено у фідбек")
+        logger.info(f"✅ Стратегію #{payload.index} оновлено та збережено у фідбек")
         return {"message": "Стратегію оновлено та збережено у фідбек"}
     except HTTPException:
         raise
@@ -97,18 +89,17 @@ def update_strategy(payload: StrategyUpdate):
         logger.exception("❌ Помилка при оновленні стратегії")
         raise HTTPException(status_code=500, detail="Не вдалося оновити стратегію")
 
-
 # === 🔃 POST /api/strategies/reorder ===
-@router.post("/reorder")
+@router.post("/reorder", summary="Змінити порядок стратегій")
 def reorder_strategies(new_order: List[StrategyItem]):
     """
-    Перезаписує весь список стратегій у новому порядку
+    Перезаписує весь список стратегій у файлі у новому порядку.
     """
     try:
-        ordered = [item.dict() for item in new_order]
-        save_jsonl(REFINED_BAD_PATH, ordered)
-        logger.info("🔃 Порядок стратегій оновлено")
-        return {"message": "Порядок стратегій збережено"}
+        ordered_list = [item.dict() for item in new_order]
+        save_jsonl(REFINED_BAD_PATH, ordered_list)
+        logger.info(f"🔃 Порядок стратегій оновлено: {len(ordered_list)} шт.")
+        return {"message": "Порядок стратегій збережено", "count": len(ordered_list)}
     except Exception:
         logger.exception("❌ Помилка при збереженні нового порядку стратегій")
         raise HTTPException(status_code=500, detail="Не вдалося зберегти порядок стратегій")

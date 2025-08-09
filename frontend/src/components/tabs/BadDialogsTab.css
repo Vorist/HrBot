@@ -1,68 +1,135 @@
 /* frontend/src/components/tabs/BadDialogsTab.css */
 
 .bad-tab {
-  padding: 20px;
+  padding: 2rem 1rem;
   max-width: 900px;
   margin: 0 auto;
+  font-family: 'Segoe UI', Arial, sans-serif;
 }
 
 .bad-tab h2 {
-  font-size: 26px;
-  margin-bottom: 20px;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.status {
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  color: #2563eb;
+}
+
+.status.error {
+  color: #ef4444;
+  font-weight: 500;
+  background: #fef2f2;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #fecaca;
 }
 
 .dialog-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.5rem;
 }
 
-/* Карточка каждого диалога */
+/* Карточка диалога */
+.card,
 .dialog-card {
-  background-color: #f3f4f6;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  padding: 1.25rem 1.5rem;
 }
 
-/* Отступы и оформление строк диалога */
+.dialog-content {
+  margin-bottom: 1rem;
+}
+
 .dialog-line {
-  margin: 8px 0;
-  font-size: 15px;
-  line-height: 1.4;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 6px 0;
+  font-size: 1rem;
 }
 
-/* Текстовое поле фидбека */
+.dialog-line b {
+  min-width: 90px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.dialog-line span {
+  color: #334155;
+}
+
+.manager-comment,
 .dialog-card textarea {
   width: 100%;
-  min-height: 80px;
-  padding: 10px;
-  font-size: 14px;
+  min-height: 70px;
+  font-size: 15px;
+  padding: 10px 12px;
   border-radius: 6px;
-  border: 1px solid #999;
+  border: 1px solid #cbd5e1;
+  margin-top: 10px;
+  background: #fff;
+  transition: border-color 0.15s;
   resize: vertical;
-  margin-top: 12px;
+}
+.manager-comment:focus {
+  border-color: #2563eb;
+  outline: none;
 }
 
-/* Группа кнопок */
 .button-group {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
-/* Кнопка отправки */
-button {
-  background-color: #2563eb;
-  color: white;
+.button-group button,
+.button-group .ui-button,
+.button-group .Button {
+  background: #2563eb;
+  color: #fff;
   border: none;
-  padding: 8px 16px;
+  padding: 9px 18px;
   border-radius: 6px;
-  cursor: pointer;
+  font-size: 1rem;
   font-weight: 500;
+  transition: background 0.15s, box-shadow 0.15s;
+  cursor: pointer;
 }
 
-button:hover {
-  background-color: #1e40af;
+.button-group button[disabled],
+.button-group .ui-button[disabled] {
+  background: #93c5fd;
+  color: #e5e7eb;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.button-group button:hover:not([disabled]),
+.button-group .ui-button:hover:not([disabled]) {
+  background: #1e40af;
+}
+
+@media (max-width: 600px) {
+  .bad-tab {
+    padding: 1rem 0.3rem;
+  }
+  .card,
+  .dialog-card {
+    padding: 1rem 0.7rem;
+  }
+  .button-group button,
+  .button-group .ui-button {
+    padding: 8px 10px;
+    font-size: 0.98rem;
+  }
 }

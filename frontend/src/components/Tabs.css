@@ -1,30 +1,122 @@
 /* frontend/src/components/Tabs.css */
+
+/* --------------------------------------------------
+   Variables (can be overridden in index.css)
+-------------------------------------------------- */
+:root {
+  --tab-bg: #334155;
+  --tab-bg-hover: #3b82f6;
+  --tab-active-bg: #3b82f6;
+  --tab-color: #edf2f7;
+  --tab-active-color: #ffffff;
+  --tab-font-size: 0.9rem;
+  --tab-padding-vertical: 0.6rem;
+  --tab-padding-horizontal: 1rem;
+  --tab-border-radius: 0.5rem;
+  --tab-transition: background-color 0.2s ease, transform 0.1s ease;
+  --tab-gap: 0.5rem;
+  --nav-bg: #1e293b;
+  --nav-border-color: var(--tab-active-bg);
+}
+
+/* --------------------------------------------------
+   Tabs navigation container
+-------------------------------------------------- */
 .tabs-nav {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
-  background-color: #1e293b;
-  padding: 12px;
-  gap: 10px;
-  border-bottom: 3px solid #3b82f6;
+  gap: var(--tab-gap);
+  background-color: var(--nav-bg);
+  padding: 0.75rem;
+  border-bottom: 3px solid var(--nav-border-color);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* smooth on iOS */
 }
 
+/* Custom scrollbar for horizontal nav */
+.tabs-nav::-webkit-scrollbar {
+  height: 6px;
+}
+.tabs-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tabs-nav::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.2);
+  border-radius: 3px;
+}
+
+/* --------------------------------------------------
+   Tab buttons
+-------------------------------------------------- */
 .tab-button {
-  background-color: #334155;
-  color: #fff;
-  padding: 10px 16px;
-  font-size: 15px;
+  background-color: var(--tab-bg);
+  color: var(--tab-color);
+  padding: var(--tab-padding-vertical) var(--tab-padding-horizontal);
+  font-size: var(--tab-font-size);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--tab-border-radius);
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: var(--tab-transition);
+  white-space: nowrap;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  outline: none;
 }
 
-.tab-button:hover {
-  background-color: #3b82f6;
+/* Expand clickable area without altering layout */
+.tab-button::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: -8px;
+  right: -8px;
+  border-radius: var(--tab-border-radius);
+  z-index: -1;
 }
 
+/* Hover state */
+.tab-button:hover:not(.active) {
+  background-color: var(--tab-bg-hover);
+  transform: translateY(-1px);
+}
+
+/* Focus-visible for accessibility */
+.tab-button:focus-visible {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+/* Active tab styling */
 .tab-button.active {
-  background-color: #3b82f6;
-  font-weight: bold;
+  background-color: var(--tab-active-bg);
+  color: var(--tab-active-color);
+  font-weight: 600;
+}
+
+/* Underline indicator for active tab */
+.tab-button.active::after {
+  content: "";
+  display: block;
+  width: 50%;
+  height: 3px;
+  margin: 0.3rem auto 0;
+  background-color: var(--tab-active-color);
+  border-radius: 2px;
+}
+
+/* --------------------------------------------------
+   Responsive adjustments
+-------------------------------------------------- */
+@media (max-width: 600px) {
+  .tabs-nav {
+    padding: 0.5rem;
+  }
+  .tab-button {
+    flex: 1 0 auto;
+    text-align: center;
+  }
 }

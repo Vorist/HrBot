@@ -1,11 +1,12 @@
-import json
 import os
+import json
 import faiss
 import numpy as np
-import sys
 from hashlib import sha256
 from datetime import datetime
+import sys
 
+# Подключаем корень проекта для всех импортов
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from config import (
@@ -14,11 +15,10 @@ from config import (
     GOOD_DIALOG_CHUNKS_PATH,
     EMBED_CACHE_PATH,
     FEEDBACK_LESSONS_PATH,
+    LOG_PATH,
 )
-from utils import split_dialog_into_chunks, log
+from utils import log, split_dialog_into_chunks
 from knowledge_embeddings import embed_texts
-
-LOG_PATH = "logs/training_log.txt"
 
 def log_to_file(message: str):
     os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
@@ -55,11 +55,19 @@ def load_feedback_lessons():
         return []
 
 def apply_feedback(chunk, feedback_lessons):
+    text = chunk.get("text", "").lower()
     for lesson in feedback_lessons:
-        if lesson.get("pattern") in chunk["text"].lower():
+        if lesson.get("pattern") and lesson["pattern"].lower() in text:
             chunk["feedback"] = lesson.get("recommendation", "")
             break
     return chunk
+
+def dialog_to_text(dialog):
+    """Склеивает весь диалог в текст для разбивки на чанки"""
+    return "\n".join([
+        f"{'👤' if m['role'] == 'user' else '🤖'} {m['text']}".strip()
+        for m in dialog if 'role' in m and 'text' in m
+    ])
 
 def train_on_good_dialogs():
     log_to_file("🌟 Старт навчання на GOOD діалогах...")
@@ -80,8 +88,10 @@ def train_on_good_dialogs():
                 continue
             try:
                 obj = json.loads(line)
-                if "text" in obj:
-                    chunks = split_dialog_into_chunks(obj["text"], label="good")
+                dialog = obj.get("dialog")
+                if isinstance(dialog, list):
+                    full_text = dialog_to_text(dialog)
+                    chunks = split_dialog_into_chunks(full_text, label="good")
                     for chunk in chunks:
                         h = sha256(chunk["text"].encode("utf-8")).hexdigest()
                         if h not in hashes_seen:

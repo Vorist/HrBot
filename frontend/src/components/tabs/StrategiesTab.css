@@ -1,95 +1,182 @@
 /* frontend/src/components/tabs/StrategiesTab.css */
 
 .strategies-tab {
-  padding: 20px;
-  max-width: 900px;
+  padding: 24px;
+  max-width: 950px;
   margin: 0 auto;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
 }
 
 .strategies-title {
-  font-size: 26px;
-  font-weight: bold;
-  margin-bottom: 20px;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #1e293b;
+  letter-spacing: 0.02em;
 }
 
+.strategies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Карточка стратегии */
 .strategy-card {
-  background-color: #f9fafb;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background: #f9fafb;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 22px 26px 18px 26px;
+  position: relative;
+  transition: box-shadow 0.18s;
+  box-shadow: 0 2px 10px 0 rgba(30,41,59,0.04);
 }
 
-/* Секции внутри карточки */
+.strategy-card.editing {
+  box-shadow: 0 4px 18px 0 rgba(16, 185, 129, 0.09);
+  border-color: #10b981;
+}
+
+.strategy-card.saved {
+  animation: cardSuccess 1.2s;
+  border-color: #10b981;
+}
+
+@keyframes cardSuccess {
+  0% { box-shadow: 0 0 0 0 #10b98144; }
+  40% { box-shadow: 0 0 0 10px #10b98122; }
+  100% { box-shadow: 0 2px 10px 0 rgba(30,41,59,0.04); }
+}
+
 .section {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .section strong {
   display: block;
   margin-bottom: 4px;
-  color: #111827;
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 1.04em;
+}
+
+.section p,
+.section em {
+  margin: 0;
+  font-size: 1.01em;
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 .original p {
-  background-color: #fee2e2;
-  padding: 8px;
-  border-radius: 6px;
-  white-space: pre-wrap;
+  background: #fee2e2;
+  padding: 10px 14px;
+  border-radius: 7px;
+  border-left: 3.5px solid #ef4444;
+  color: #991b1b;
 }
 
 .improved p {
-  background-color: #d1fae5;
-  padding: 8px;
-  border-radius: 6px;
-  white-space: pre-wrap;
+  background: #d1fae5;
+  padding: 10px 14px;
+  border-radius: 7px;
+  border-left: 3.5px solid #10b981;
+  color: #065f46;
 }
 
-/* Текстовое поле для редактирования */
+.improved .muted {
+  color: #6b7280;
+  font-style: italic;
+}
+
 textarea {
   width: 100%;
-  min-height: 80px;
-  padding: 10px;
-  font-size: 15px;
-  border-radius: 6px;
-  border: 1px solid #9ca3af;
-  resize: vertical;
+  min-height: 90px;
+  padding: 10px 12px;
+  font-size: 16px;
+  border-radius: 7px;
+  border: 1.5px solid #3b82f6;
+  background: #fff;
+  margin-top: 6px;
+  font-family: inherit;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+textarea:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px #10b98122;
 }
 
-/* Кнопки */
+.actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 12px;
+}
+
 button {
-  padding: 6px 14px;
-  margin-right: 10px;
-  border-radius: 5px;
+  padding: 7px 18px;
+  font-size: 15px;
+  border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
   border: none;
+  box-shadow: 0 1px 3px rgba(59,130,246,0.03);
+  transition: background 0.15s, box-shadow 0.18s;
 }
 
-/* Конкретные стили для кнопок редактирования/сохранения/отмены */
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f655;
+}
+
 .edit-button {
-  background-color: #3b82f6;
-  color: white;
+  background: #3b82f6;
+  color: #fff;
+}
+.edit-button:hover {
+  background: #2563eb;
 }
 
 .save {
-  background-color: #10b981;
-  color: white;
+  background: #10b981;
+  color: #fff;
+}
+.save:hover {
+  background: #059669;
 }
 
 .cancel {
-  background-color: #ef4444;
-  color: white;
+  background: #ef4444;
+  color: #fff;
+}
+.cancel:hover {
+  background: #b91c1c;
 }
 
-/* Состояния загрузки и ошибки */
-.loading,
-.error {
-  text-align: center;
-  font-size: 18px;
-  margin: 20px 0;
+.status-message {
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b7280;
 }
-
-.error {
+.status-message.success {
+  color: #10b981;
+}
+.status-message.error {
   color: #ef4444;
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+  .strategies-tab {
+    padding: 10px;
+    max-width: 99vw;
+  }
+  .strategy-card {
+    padding: 12px 7px 10px 10px;
+  }
+  .strategies-title {
+    font-size: 1.25rem;
+    margin-bottom: 13px;
+  }
 }

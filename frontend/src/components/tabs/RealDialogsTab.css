@@ -1,23 +1,38 @@
 /* frontend/src/components/tabs/RealDialogsTab.css */
 
+/* Variables (fallbacks if not defined globally) */
+:root {
+  --rd-bg: #f9fafb;
+  --rd-border: #e5e7eb;
+  --rd-card-bg: #ffffff;
+  --rd-card-border: #e5e7eb;
+  --rd-card-shadow: rgba(0, 0, 0, 0.05);
+  --rd-heading: #1f2937;
+  --rd-text: #374151;
+  --rd-source: #111827;
+  --rd-button-gap: 0.75rem;
+}
+
 .real-tab {
   padding: 2rem;
   max-width: 960px;
   margin: 0 auto;
   font-family: 'Segoe UI', sans-serif;
+  color: var(--rd-text);
 }
 
 .real-tab h2 {
   font-size: 2rem;
   margin-bottom: 1.5rem;
-  color: #1f2937;
+  color: var(--rd-heading);
 }
 
+/* Add-dialog form */
 .add-dialog-form {
-  background: #f9fafb;
+  background: var(--rd-bg);
   padding: 1.5rem;
   border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--rd-border);
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
@@ -31,39 +46,43 @@
   }
 }
 
-.add-dialog-form .input-wrapper,
-.add-dialog-form .textarea-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+/* Container wrappers for consistent spacing */
+.add-dialog-form > * {
+  width: 100%;
 }
 
-.add-dialog-form Button {
-  align-self: flex-end;
-  padding: 0.6rem 1.2rem;
+/* Align button in form */
+.add-dialog-form button {
+  justify-self: end;
 }
 
+/* Dialog list and cards */
 .dialog-list {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.dialog-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+/* Style shadcn Card component inside this tab */
+.dialog-list .card {
+  background: var(--rd-card-bg);
+  border: 1px solid var(--rd-card-border);
   border-radius: 0.75rem;
   padding: 1rem 1.25rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px var(--rd-card-shadow);
+  display: flex;
+  flex-direction: column;
 }
 
+/* Source line styling */
 .source-line {
   font-weight: 600;
   font-size: 1rem;
   margin-bottom: 0.75rem;
-  color: #111827;
+  color: var(--rd-source);
 }
 
+/* Dialog text area */
 .dialog-text {
   background-color: #f3f4f6;
   border-radius: 0.5rem;
@@ -71,34 +90,38 @@
   font-size: 0.95rem;
   line-height: 1.5;
   white-space: pre-wrap;
-  color: #374151;
+  color: var(--rd-text);
 }
 
+/* Spacing between lines */
 .dialog-line + .dialog-line {
   margin-top: 0.5rem;
 }
 
+/* Button group within each card */
 .button-group {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: var(--rd-button-gap);
   margin-top: 1rem;
 }
 
-.button-group Button {
+/* Button overrides inside this context */
+.button-group button {
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
 }
 
-.button-group Button:hover {
+.button-group button:hover {
   opacity: 0.9;
 }
 
-.button-group Button[variant="destructive"] {
+/* Destructive variant styling */
+.button-group [variant="destructive"] {
   background-color: #ef4444;
   color: #ffffff;
 }
 
-.button-group Button[variant="destructive"]:hover {
+.button-group [variant="destructive"]:hover {
   background-color: #dc2626;
 }

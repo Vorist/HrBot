@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict, Any
 from datetime import datetime
 import os
 import logging
@@ -13,116 +13,136 @@ from backend.utils.jsonl_utils import append_jsonl
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Модель для POST-запроса: одна фраза менеджера
-class DialogLine(BaseModel):
-    text: str
+# ---- 📦 Моделі ----
+class RealDialog(BaseModel):
+    source: str
+    dialog: List[Dict[str, str]]  # [{"role": "bot", "text": ...}, {"role": "user", "text": ...}]
 
-# --- 📥 GET /api/real_dialogs/ ---
-@router.get("/", response_model=List[str])
-def get_real_dialogs():
+class AddDialogRequest(BaseModel):
+    source: str
+    dialog: str  # raw multi-line text ("🤖 ...\n👤 ...")
+
+class ConvertRequest(BaseModel):
+    index: int
+    target: str  # "good" або "bad"
+
+# ---- 📖 Утилита парсинга ----
+def load_real_dialogs() -> List[Dict[str, Any]]:
     """
-    Возвращает все непустые строки из файла real_dialogs.txt
+    Загружает все диалоги из real_dialogs.txt как [{source, dialog: [{"role", "text"}]}]
     """
-    path = REAL_DIALOGS_PATH
-    if not os.path.exists(path):
+    if not os.path.exists(REAL_DIALOGS_PATH):
         return []
+
+    dialogs = []
+    current = None
+
+    with open(REAL_DIALOGS_PATH, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                if current:
+                    dialogs.append(current)
+                    current = None
+                continue
+
+            if line.startswith("📥 Джерело:") or line.startswith("📥 Джерело:"):
+                if current:
+                    dialogs.append(current)
+                current = {
+                    "source": line.replace("📥 Джерело:", "").strip(),
+                    "dialog": []
+                }
+            elif current is not None:
+                # 👤 або 🤖
+                if line.startswith("👤"):
+                    current["dialog"].append({"role": "user", "text": line[1:].strip()})
+                elif line.startswith("🤖"):
+                    current["dialog"].append({"role": "bot", "text": line[1:].strip()})
+                else:
+                    current["dialog"].append({"role": "system", "text": line.strip()})
+        if current:
+            dialogs.append(current)
+    return dialogs
+
+def save_real_dialogs(dialogs: List[Dict[str, Any]]):
+    with open(REAL_DIALOGS_PATH, "w", encoding="utf-8") as f:
+        for dialog in dialogs:
+            f.write(f"📥 Джерело: {dialog['source']}\n")
+            for line in dialog["dialog"]:
+                icon = "👤" if line["role"] == "user" else "🤖"
+                f.write(f"{icon} {line['text']}\n")
+            f.write("\n")
+
+# ---- GET ----
+@router.get("/", response_model=List[RealDialog])
+def get_real_dialogs():
     try:
-        with open(path, "r", encoding="utf-8") as f:
-            lines = [line.rstrip() for line in f if line.strip()]
-        logger.info(f"📥 Загружено {len(lines)} фраз менеджера")
-        return lines
+        dialogs = load_real_dialogs()
+        logger.info(f"📥 Загружено {len(dialogs)} реальних діалогів")
+        return dialogs
     except Exception:
         logger.exception("❌ Ошибка чтения real_dialogs.txt")
         raise HTTPException(status_code=500, detail="Не удалось загрузить реальные диалоги")
 
-# --- ➕ POST /api/real_dialogs/ ---
+# ---- POST ----
 @router.post("/", status_code=201)
-def add_real_dialog(line: DialogLine):
-    """
-    Добавляет новую фразу менеджера в файл real_dialogs.txt
-    """
-    text = line.text.strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="Текст не может быть пустым")
-    try:
-        os.makedirs(os.path.dirname(REAL_DIALOGS_PATH), exist_ok=True)
-        with open(REAL_DIALOGS_PATH, "a", encoding="utf-8") as f:
-            f.write(text + "\n")
-        logger.info("✅ Добавлена новая фраза менеджера")
-        return {"text": text}
-    except Exception:
-        logger.exception("❌ Ошибка записи в real_dialogs.txt")
-        raise HTTPException(status_code=500, detail="Не удалось сохранить фразу")
+def add_real_dialog(req: AddDialogRequest):
+    if not req.source.strip() or not req.dialog.strip():
+        raise HTTPException(status_code=400, detail="Вкажіть джерело і текст діалогу")
+    lines = req.dialog.strip().split("\n")
+    dialog = []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("👤"):
+            dialog.append({"role": "user", "text": line[1:].strip()})
+        elif line.startswith("🤖"):
+            dialog.append({"role": "bot", "text": line[1:].strip()})
+        else:
+            dialog.append({"role": "system", "text": line})
+    new_entry = {"source": req.source.strip(), "dialog": dialog}
 
-# --- 🗑️ DELETE /api/real_dialogs/{index} ---
+    dialogs = load_real_dialogs()
+    dialogs.append(new_entry)
+    save_real_dialogs(dialogs)
+    logger.info("✅ Додано новий реальний діалог")
+    return new_entry
+
+# ---- DELETE ----
 @router.delete("/{index}")
 def delete_real_dialog(index: int):
-    """
-    Удаляет фразу менеджера по индексу из real_dialogs.txt
-    """
-    path = REAL_DIALOGS_PATH
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="Файл не найден")
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            lines = [line.rstrip() for line in f if line.strip()]
-        if index < 0 or index >= len(lines):
-            raise HTTPException(status_code=404, detail="Индекс за пределами списка")
-        deleted = lines.pop(index)
-        with open(path, "w", encoding="utf-8") as f:
-            for l in lines:
-                f.write(l + "\n")
-        logger.info(f"🗑️ Удалена фраза менеджера #{index}")
-        return {"deleted": deleted}
-    except HTTPException:
-        raise
-    except Exception:
-        logger.exception("❌ Ошибка при удалении фразы")
-        raise HTTPException(status_code=500, detail="Не удалось удалить фразу")
+    dialogs = load_real_dialogs()
+    if index < 0 or index >= len(dialogs):
+        raise HTTPException(status_code=404, detail="Діалог не знайдено")
+    deleted = dialogs.pop(index)
+    save_real_dialogs(dialogs)
+    logger.info(f"🗑️ Видалено діалог #{index}")
+    return {"deleted": deleted}
 
-# --- 🔁 POST /api/real_dialogs/convert ---
-class ConvertRequest(BaseModel):
-    index: int
-    target: str  # "good" или "bad"
-
+# ---- CONVERT ----
 @router.post("/convert")
-def convert_dialog(req: ConvertRequest):
-    """
-    Перемещает фразу в good_dialogs.jsonl или bad_dialogs.jsonl, удаляет из real_dialogs.txt
-    """
-    path = REAL_DIALOGS_PATH
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="Файл не найден")
-    try:
-        # читаем все непустые строки
-        with open(path, "r", encoding="utf-8") as f:
-            lines = [line.rstrip() for line in f if line.strip()]
-        if req.index < 0 or req.index >= len(lines):
-            raise HTTPException(status_code=404, detail="Индекс не найден")
-        text = lines.pop(req.index)
+def convert_real_dialog(req: ConvertRequest):
+    dialogs = load_real_dialogs()
+    if req.index < 0 or req.index >= len(dialogs):
+        raise HTTPException(status_code=404, detail="Діалог не знайдено")
+    dialog = dialogs.pop(req.index)
+    save_real_dialogs(dialogs)
 
-        # перезаписываем файл без удалённой строки
-        with open(path, "w", encoding="utf-8") as f:
-            for l in lines:
-                f.write(l + "\n")
+    # Перемещение в good/bad
+    entry = {
+        "user": "Кандидат",
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "dialog": dialog["dialog"],
+        "source": dialog["source"]
+    }
+    if req.target == "good":
+        append_jsonl(GOOD_DIALOGS_PATH, entry)
+    elif req.target == "bad":
+        append_jsonl(BAD_DIALOGS_PATH, entry)
+    else:
+        raise HTTPException(status_code=400, detail="target повинен бути good або bad")
 
-        # формируем запись для JSONL
-        entry = {
-            "user": text,
-            "date": datetime.now().strftime("%Y-%m-%d"),
-            "dialog": [{"role": "user", "text": text}]
-        }
-        if req.target == "good":
-            append_jsonl(GOOD_DIALOGS_PATH, entry)
-        elif req.target == "bad":
-            append_jsonl(BAD_DIALOGS_PATH, entry)
-        else:
-            raise HTTPException(status_code=400, detail="target должен быть 'good' или 'bad'")
-
-        logger.info(f"🔁 Фраза перемещена в {req.target}")
-        return {"moved": req.target, "text": text}
-    except HTTPException:
-        raise
-    except Exception:
-        logger.exception("❌ Ошибка при конвертации фразы")
-        raise HTTPException(status_code=500, detail="Не удалось конвертировать фразу")
+    logger.info(f"🔁 Діалог переміщено в {req.target}")
+    return {"moved": req.target, "dialog": entry}

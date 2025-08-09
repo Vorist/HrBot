@@ -3,68 +3,67 @@ chcp 65001 >nul
 title 🚀 HR UI LAUNCHER
 
 echo ===============================================
-echo 🔧 Запуск повної системи HR-інтерфейсу...
+echo 🔧 Запуск полной HR-системы (бекенд + фронтенд)
 echo ===============================================
 echo.
 
 :: ========== PYTHON BACKEND ==========
-
-echo 🧪 Перевірка virtualenv...
+echo 🧪 Проверка virtualenv...
 if not exist venv\Scripts\activate.bat (
-    echo 📁 Створення нового venv...
+    echo 📁 Создание нового venv...
     python -m venv venv
     if errorlevel 1 (
-        echo ❌ Помилка при створенні venv!
+        echo ❌ Ошибка при создании venv!
         pause
         exit /b
     )
 )
 
-echo ✅ Venv активовано
+echo ✅ Venv активирован
 call venv\Scripts\activate.bat
 
-echo 📦 Встановлення залежностей Python...
+echo 📦 Установка Python-зависимостей...
+pip install --upgrade pip >nul
 pip install -r requirements.txt
 if errorlevel 1 (
-    echo ❌ pip install завершився з помилкою!
+    echo ❌ pip install завершился с ошибкой!
     pause
     exit /b
 )
-echo ✅ Python-залежності встановлено
+echo ✅ Python-зависимости установлены
 echo.
 
 :: ========== NODE FRONTEND ==========
-
 cd frontend
 if not exist node_modules (
-    echo 📦 Встановлення залежностей Node...
+    echo 📦 Установка Node-зависимостей...
     npm install
     if errorlevel 1 (
-        echo ❌ npm install завершився з помилкою!
+        echo ❌ npm install завершился с ошибкой!
         pause
         exit /b
     )
 )
 cd ..
 
-echo ✅ Node-залежності перевірено
+echo ✅ Node-зависимости готовы
 echo.
 
-:: ========== ЗАПУСК БЕКЕНДУ ==========
+:: ========== ЗАПУСК БЕКЕНДА ==========
+echo 🚀 Запуск бекенда (FastAPI, Uvicorn)...
+start "BACKEND" cmd /k "cd /d %cd% && call venv\Scripts\activate.bat && uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000"
+timeout /t 2 >nul
 
-echo 🚀 Запуск бекенду (FastAPI)...
-start "BACKEND" cmd /k "cd /d %cd% && call venv\Scripts\activate.bat && uvicorn backend.main:app --reload"
-
-:: ========== ЗАПУСК ФРОНТЕНДУ ==========
-
-echo 🚀 Запуск фронтенду (Vite)...
+:: ========== ЗАПУСК ФРОНТЕНДА ==========
+echo 🚀 Запуск фронтенда (Vite)...
 start "FRONTEND" cmd /k "cd /d %cd%\frontend && npm run dev"
+timeout /t 2 >nul
 
-:: ========== ФІНАЛ ==========
-
+:: ========== ГОТОВО ==========
 echo.
-echo ✅ Успішний запуск!
+echo ✅ Система успешно запущена!
+echo -----------------------------------------------
 echo 🔗 Backend:  http://localhost:8000
 echo 🔗 Frontend: http://localhost:5173
-echo -----------------------------------------------
+echo ===============================================
 pause

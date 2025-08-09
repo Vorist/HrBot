@@ -18,8 +18,7 @@ if exist venv\Scripts\activate.bat (
 ) else (
     echo ❌ Не знайдено venv\Scripts\activate.bat
     echo 💡 Створи його командою: python -m venv venv
-    pause
-    exit /b
+    goto :wait_to_close
 )
 
 REM === 🔁 Запуск повного циклу навчання бота ===
@@ -61,4 +60,8 @@ echo 🔎 Лог збережено у файлі: %LOG_PATH%
 echo ---------------------- Вміст логу ----------------------
 type %LOG_PATH%
 
-pause
+:wait_to_close
+echo.
+echo Нажми любую клавишу, чтобы закрыть окно...
+pause >nul
+endlocal

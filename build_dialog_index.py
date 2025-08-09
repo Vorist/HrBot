@@ -7,7 +7,7 @@ from config import (
     OPENAI_API_KEY,
     DIALOG_CHUNKS_PATH,
     DIALOG_INDEX_PATH,
-    REAL_DIALOGS_TXT_PATH  # ❗️ ОНОВЛЕНО
+    REAL_DIALOGS_PATH,   # <-- Исправлено!
 )
 
 # === 🔐 Ініціалізація клієнта OpenAI ===
@@ -35,6 +35,7 @@ def embed_texts(texts):
         return [np.array(obj.embedding, dtype=np.float32) for obj in response.data]
     except Exception as e:
         print(f"❌ Помилка при генерації ембедінгів: {e}")
+        # Для каждого текста возвращаем zero embedding, чтобы не падать дальше
         return [np.zeros((1536,), dtype=np.float32) for _ in texts]
 
 # === 📥 Завантаження реальних діалогів з TXT ===
@@ -46,14 +47,17 @@ def load_real_dialogs(path):
     try:
         with open(path, "r", encoding="utf-8") as f:
             blocks = f.read().strip().split("\n\n")
-        return [block.strip() for block in blocks if block.strip()]
+        dialogs = [block.strip() for block in blocks if block.strip()]
+        print(f"📥 Завантажено {len(dialogs)} діалогів з {path}")
+        return dialogs
     except Exception as e:
         print(f"❌ Помилка при зчитуванні {path}: {e}")
         return []
 
 # === 🧠 Основна логіка побудови індексу ===
 def main():
-    raw_dialogs = load_real_dialogs(REAL_DIALOGS_TXT_PATH)  # ❗️ ОНОВЛЕНО
+    print(f"🔍 Читаємо діалоги з: {REAL_DIALOGS_PATH}")
+    raw_dialogs = load_real_dialogs(REAL_DIALOGS_PATH)
     if not raw_dialogs:
         print("⚠️ Немає валідних діалогів для обробки.")
         return
@@ -64,6 +68,7 @@ def main():
         chunks.extend(parts)
 
     chunks = [chunk for chunk in chunks if chunk.strip()]
+    print(f"🔎 Всього фрагментів для ембедінгу: {len(chunks)}")
     if not chunks:
         print("⚠️ Усі фрагменти порожні або невалідні.")
         return
@@ -79,9 +84,10 @@ def main():
 
     with open(DIALOG_CHUNKS_PATH, "w", encoding="utf-8") as f:
         json.dump([{"text": chunk} for chunk in chunks], f, ensure_ascii=False, indent=2)
+    print(f"✅ Збережено {len(chunks)} фрагментів у {DIALOG_CHUNKS_PATH}")
 
     faiss.write_index(index, DIALOG_INDEX_PATH)
-    print(f"✅ Збережено {len(chunks)} фрагментів у індекс → {DIALOG_INDEX_PATH}")
+    print(f"✅ FAISS-індекс збережено у {DIALOG_INDEX_PATH}")
 
 # === 🔁 Запуск скрипта ===
 if __name__ == "__main__":

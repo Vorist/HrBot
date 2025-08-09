@@ -1,0 +1,3 @@
+🔁 Запуск повного циклу навчання бота... 
+🔄 Крок 1: Конвертація TXT → JSONL 
+  1    C:\Users\acer\Documents\project\data\real_dialogs.txt

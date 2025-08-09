@@ -1,19 +1,21 @@
 .training-tab {
-  padding: 20px;
+  padding: 24px 16px;
   max-width: 800px;
   margin: 0 auto;
+  font-family: 'Segoe UI', Arial, sans-serif;
 }
 
 .training-title {
-  font-size: 26px;
-  font-weight: bold;
-  margin-bottom: 20px;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.7rem;
+  color: #1e293b;
 }
 
 .training-buttons {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 18px;
 }
 
 .training-card {
@@ -21,38 +23,91 @@
   justify-content: space-between;
   align-items: center;
   background: #f3f4f6;
-  padding: 16px 20px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
+  padding: 18px 20px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 1px 4px 0 rgba(30, 41, 59, 0.04);
 }
 
-.training-card button {
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
+.training-label {
+  font-size: 1.08rem;
   font-weight: 500;
+  color: #374151;
 }
 
-.training-card button:hover {
-  background-color: #1d4ed8;
+.training-run-button {
+  background-color: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background 0.2s, transform 0.1s;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 2px 0 rgba(37,99,235,0.07);
+  position: relative;
+}
+
+.training-run-button.loading,
+.training-run-button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.training-run-button:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-2px) scale(1.04);
 }
 
 .training-status {
-  margin-top: 30px;
-  font-size: 16px;
-  color: #111827;
+  margin-top: 32px;
+  font-size: 1.05rem;
+  padding: 10px 0 4px 0;
+  border-radius: 6px;
+  color: #2563eb;
+  font-weight: 500;
+  text-align: left;
+  letter-spacing: 0.01em;
+}
+
+.training-status.success {
+  color: #059669;
+}
+.training-status.error {
+  color: #dc2626;
 }
 
 .training-log {
-  background-color: #111827;
+  background: #111827;
   color: #d1d5db;
-  padding: 12px;
+  padding: 16px;
   border-radius: 8px;
-  margin-top: 15px;
-  font-family: monospace;
-  max-height: 300px;
+  margin-top: 14px;
+  font-family: 'Fira Mono', 'Consolas', monospace;
+  font-size: 15px;
+  max-height: 330px;
   overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 600px) {
+  .training-tab {
+    padding: 10px 3vw;
+  }
+  .training-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 10px;
+  }
+  .training-run-button {
+    width: 100%;
+    padding: 10px 0;
+    font-size: 1rem;
+  }
 }

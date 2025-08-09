@@ -15,7 +15,7 @@ from config import (
     FEEDBACK_LESSONS_PATH,
     DIALOG_CHUNKS_PATH,
     REAL_INDEX_PATH,
-    REAL_DIALOGS_TXT_PATH
+    REAL_DIALOGS_PATH
 )
 from dialog_memory import get_history
 from openai import OpenAI
@@ -54,7 +54,7 @@ except Exception:
     feedback_lessons = []
 
 try:
-    raw_texts = load_real_dialogs_from_txt(REAL_DIALOGS_TXT_PATH)
+    raw_texts = load_real_dialogs_from_txt(REAL_DIALOGS_PATH)
     real_texts = [t.strip() for t in raw_texts if isinstance(t, str) and t.strip()]
 
     if not real_texts:

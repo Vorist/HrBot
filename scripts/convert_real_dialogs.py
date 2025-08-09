@@ -1,11 +1,12 @@
 import os
 import sys
 import json
+import hashlib
 
-# ✅ Додаємо корінь проєкту
+# ✅ Добавляем корень проекта (чтобы находил config)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from config import REAL_DIALOGS_TXT_PATH, REAL_DIALOGS_PATH, USED_DIALOGS_PATH
+from config import REAL_DIALOGS_PATH, USED_DIALOGS_PATH
 
 def safe_print(message):
     try:
@@ -13,80 +14,95 @@ def safe_print(message):
     except UnicodeEncodeError:
         print(message.encode("ascii", "ignore").decode())
 
-def load_used_dialogs():
+def hash_dialog_block(lines):
+    """Генерирует хеш блока для дубликат-контроля (без учета переводов строк)."""
+    normalized = "\n".join([line.strip() for line in lines if line.strip()])
+    return hashlib.md5(normalized.encode("utf-8")).hexdigest()
+
+def load_used_hashes():
+    """Загружает множество ранее импортированных диалогов (по хешу)."""
     if os.path.exists(USED_DIALOGS_PATH):
         try:
             with open(USED_DIALOGS_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return data if isinstance(data, dict) else {}
+                if isinstance(data, list):
+                    return set(data)
+                elif isinstance(data, dict):
+                    return set(data.keys())
         except Exception as e:
-            safe_print(f"⚠️ Помилка читання used_dialogs: {e}")
-            return {}
-    return {}
+            safe_print(f"⚠️ Не удалось прочитать used hashes: {e}")
+    return set()
 
-def save_used_dialogs(used):
+def save_used_hashes(hashes: set):
     try:
         with open(USED_DIALOGS_PATH, "w", encoding="utf-8") as f:
-            json.dump(used, f, ensure_ascii=False, indent=2)
+            json.dump(list(hashes), f, ensure_ascii=False, indent=2)
     except Exception as e:
-        safe_print(f"❌ Не вдалося зберегти used_dialogs: {e}")
+        safe_print(f"❌ Не удалось сохранить used hashes: {e}")
 
 def parse_dialog_block(lines):
+    """Парсит один диалог-блок, аккуратно восстанавливает формат для real_dialogs.txt."""
     source = None
     dialog = []
 
     for line in lines:
-        line = line.strip()
-        if not line:
+        l = line.strip()
+        if not l:
             continue
-        if line.lower().startswith("source:"):
-            source = line.split(":", 1)[-1].strip()
-        elif line.lower().startswith("bot"):
-            dialog.append(f"🤖 {line[3:].strip(' :')}")
-        elif line.lower().startswith("user"):
-            dialog.append(f"👤 {line[4:].strip(' :')}")
-        elif line.startswith("🤖") or line.startswith("👤"):
-            dialog.append(line)
-
+        if l.lower().startswith("source:"):
+            source = l.split(":", 1)[-1].strip()
+        elif l.startswith("📥"):
+            # подстраховка если уже с источником
+            source = l.lstrip("📥").replace("Джерело:", "").replace(":", "").strip()
+        elif l.lower().startswith("bot"):
+            dialog.append(f"🤖 {l[3:].strip(' :')}")
+        elif l.lower().startswith("user"):
+            dialog.append(f"👤 {l[4:].strip(' :')}")
+        elif l.startswith("🤖") or l.startswith("👤"):
+            dialog.append(l)
     if not source or not dialog:
         return None
-
-    return f"📥 Джерело: {source}\n" + "\n".join(dialog)
+    block = [f"📥 Джерело: {source}"] + dialog
+    return "\n".join(block)
 
 def load_real_dialogs_from_txt(path):
     with open(path, "r", encoding="utf-8") as f:
         raw = f.read()
+    # Разбить на блоки по двойному переводу строки
     blocks = [block.strip().splitlines() for block in raw.strip().split("\n\n") if block.strip()]
     return blocks
 
 def convert():
-    if not os.path.exists(REAL_DIALOGS_TXT_PATH):
-        safe_print(f"❌ Файл не знайдено: {REAL_DIALOGS_TXT_PATH}")
+    if not os.path.exists(REAL_DIALOGS_PATH):
+        safe_print(f"❌ Файл не найден: {REAL_DIALOGS_PATH}")
         return
 
-    blocks = load_real_dialogs_from_txt(REAL_DIALOGS_TXT_PATH)
-    used = load_used_dialogs()
-    new_items = []
+    blocks = load_real_dialogs_from_txt(REAL_DIALOGS_PATH)
+    used_hashes = load_used_hashes()
+    new_blocks = []
 
     for lines in blocks:
-        formatted = parse_dialog_block(lines)
-        if not formatted or formatted in used:
+        block_hash = hash_dialog_block(lines)
+        if block_hash in used_hashes:
             continue
-        new_items.append(formatted)
-        used[formatted] = True
+        formatted = parse_dialog_block(lines)
+        if not formatted:
+            continue
+        new_blocks.append(formatted)
+        used_hashes.add(block_hash)
 
-    if not new_items:
-        safe_print("⚠️ Нових фрагментів не знайдено.")
+    if not new_blocks:
+        safe_print("⚠️ Новых фрагментов не найдено.")
         return
 
     try:
         os.makedirs(os.path.dirname(REAL_DIALOGS_PATH), exist_ok=True)
         with open(REAL_DIALOGS_PATH, "a", encoding="utf-8") as f:
-            f.write("\n\n".join(new_items) + "\n\n")
-        save_used_dialogs(used)
-        safe_print(f"✅ Додано {len(new_items)} нових діалогів → {REAL_DIALOGS_PATH}")
+            f.write("\n\n".join(new_blocks) + "\n\n")
+        save_used_hashes(used_hashes)
+        safe_print(f"✅ Добавлено {len(new_blocks)} новых диалогов → {REAL_DIALOGS_PATH}")
     except Exception as e:
-        safe_print(f"❌ Помилка запису: {e}")
+        safe_print(f"❌ Ошибка записи: {e}")
 
 if __name__ == "__main__":
     convert()

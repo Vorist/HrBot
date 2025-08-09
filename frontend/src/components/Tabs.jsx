@@ -1,4 +1,5 @@
 // frontend/src/components/Tabs.jsx
+
 import React from 'react';
 import './Tabs.css';
 
@@ -13,16 +14,21 @@ const tabs = [
 
 function Tabs({ activeTab, setActiveTab }) {
   return (
-    <nav className="tabs-nav">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
-          onClick={() => setActiveTab(tab.id)}
-        >
-          {tab.label}
-        </button>
-      ))}
+    <nav className="tabs-nav" role="tablist" aria-label="Main navigation">
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => setActiveTab(tab.id)}
+            className={`btn ${isActive ? 'btn-primary' : 'btn-neutral'} tab-button`}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
     </nav>
   );
 }

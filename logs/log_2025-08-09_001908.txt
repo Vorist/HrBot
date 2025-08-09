@@ -1,0 +1,7 @@
+🔁 Запуск повного циклу навчання бота... 
+🔄 Крок 1: Конвертація TXT → JSONL 
+Traceback (most recent call last):
+  File "C:\Users\acer\Documents\project\scripts\convert_real_dialogs.py", line 8, in <module>
+    from config import REAL_DIALOGS_TXT_PATH, REAL_DIALOGS_PATH, USED_DIALOGS_PATH
+ImportError: cannot import name 'REAL_DIALOGS_TXT_PATH' from 'config' (C:\Users\acer\Documents\project\config.py). Did you mean: 'REAL_DIALOGS_PATH'?
+🔄 Крок 2: Побудова knowledge_chunks  

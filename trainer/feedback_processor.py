@@ -1,4 +1,7 @@
-import sys, os
+# trainer/feedback_processor.py
+
+import sys
+import os
 import json
 import re
 from datetime import datetime
@@ -7,10 +10,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from config import FEEDBACK_COMMENTS_PATH, FEEDBACK_LESSONS_PATH
 from utils import log
-from backend.utils.jsonl_utils import append_jsonl, load_jsonl  # використовуємо JSONL
+from backend.utils.jsonl_utils import append_jsonl  # Используем append_jsonl!
 
 LOG_PATH = "logs/training_log.txt"
-
 
 def log_to_file(message: str):
     os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
@@ -19,7 +21,6 @@ def log_to_file(message: str):
     with open(LOG_PATH, "a", encoding="utf-8") as f:
         f.write(full_message + "\n")
     print(full_message)
-
 
 STRATEGY_HINTS = [
     (re.compile(r"\b(слишком|очень)?\s*длинн.*|много текста|многослов|громоздк.*", re.IGNORECASE), "Скороти відповідь"),
@@ -33,7 +34,6 @@ STRATEGY_HINTS = [
     (re.compile(r"(зачем|повторно).*представил", re.IGNORECASE), "Не повторюй представлення"),
 ]
 
-
 def extract_hint(comment: str) -> str | None:
     if not comment or not isinstance(comment, str):
         return None
@@ -42,7 +42,6 @@ def extract_hint(comment: str) -> str | None:
         if pattern.search(comment):
             return hint
     return None
-
 
 def parse_feedback_line(line: str) -> dict | None:
     try:
@@ -54,16 +53,13 @@ def parse_feedback_line(line: str) -> dict | None:
         log_to_file("⚠️ Пропущено некоректний JSON у фідбек-файлі.")
         return None
 
-
 def extract_feedback_insights(entries: list) -> list:
     results = []
     for entry in entries:
         comment = entry.get("comment", "")
         if not comment:
             continue
-
         recommendation = extract_hint(comment)
-
         results.append({
             "pattern": comment.lower(),
             "recommendation": recommendation or "",
@@ -74,7 +70,6 @@ def extract_feedback_insights(entries: list) -> list:
             "label": "feedback"
         })
     return results
-
 
 def process_feedbacks():
     log_to_file("[🧠] Обробка фідбек-коментарів...")
@@ -95,20 +90,23 @@ def process_feedbacks():
         return
 
     insights = extract_feedback_insights(entries)
+    if not insights:
+        log_to_file("⚠️ Жодної валідної рекомендації не знайдено.")
+        return
 
+    # Сохраняем каждую рекомендацию отдельной строкой JSONL!
     try:
         os.makedirs(os.path.dirname(FEEDBACK_LESSONS_PATH), exist_ok=True)
-        for insight in insights:
-            append_jsonl(FEEDBACK_LESSONS_PATH, insight)
+        with open(FEEDBACK_LESSONS_PATH, "w", encoding="utf-8") as f:
+            for insight in insights:
+                f.write(json.dumps(insight, ensure_ascii=False) + "\n")
         log_to_file(f"✅ Додано {len(insights)} рекомендацій у {FEEDBACK_LESSONS_PATH}")
     except Exception as e:
         log_to_file(f"❌ Помилка при збереженні: {e}")
 
-
 def get_feedback_comments_for_chat(chat_id: str) -> list:
     if not os.path.exists(FEEDBACK_COMMENTS_PATH):
         return []
-
     results = []
     try:
         with open(FEEDBACK_COMMENTS_PATH, "r", encoding="utf-8") as f:
@@ -118,9 +116,7 @@ def get_feedback_comments_for_chat(chat_id: str) -> list:
                     results.append(parsed)
     except Exception:
         return []
-
     return results
-
 
 if __name__ == "__main__":
     process_feedbacks()

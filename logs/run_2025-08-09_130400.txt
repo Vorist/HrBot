@@ -1,0 +1,6 @@
+[run] 09.08.2025 13:04:00,79 
+---------- START LOG ---------- 
+[Step 1] Конвертація real TXT → JSONL (без запису у real_dialogs.txt) 
+[cmd] 1  "Конвертація real TXT → JSONL (без запису у real_dialogs.txt)"        python scripts\convert_real_dialogs.py 
+'1' is not recognized as an internal or external command,
+operable program or batch file.

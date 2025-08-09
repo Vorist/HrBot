@@ -6,20 +6,18 @@ import sys
 from hashlib import sha256
 from datetime import datetime
 
-# Додаємо корінь проєкту
+# Добавляем корень проекта для корректных импортов
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from config import (
     BAD_DIALOGS_PATH,
     BAD_INDEX_PATH,
     BAD_DIALOG_CHUNKS_PATH,
-    EMBED_CACHE_PATH
+    EMBED_CACHE_PATH,
+    LOG_PATH,
 )
-
-from knowledge_embeddings import embed_texts
 from utils import split_dialog_into_chunks, log
-
-LOG_PATH = "logs/training_log.txt"
+from knowledge_embeddings import embed_texts
 
 def log_to_file(message: str):
     os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
@@ -28,7 +26,6 @@ def log_to_file(message: str):
     with open(LOG_PATH, "a", encoding="utf-8") as f:
         f.write(full_message + "\n")
     print(full_message)
-
 
 def load_embed_cache():
     if os.path.exists(EMBED_CACHE_PATH):
@@ -39,7 +36,6 @@ def load_embed_cache():
             return {}
     return {}
 
-
 def save_embed_cache(cache):
     try:
         with open(EMBED_CACHE_PATH, "w", encoding="utf-8") as f:
@@ -47,6 +43,12 @@ def save_embed_cache(cache):
     except Exception as e:
         log_to_file(f"❌ Не вдалося зберегти кеш ембедінгів: {e}")
 
+def dialog_to_text(dialog):
+    """Преобразует структуру диалога из BAD_DIALOGS_PATH в многострочный текст для чанков."""
+    return "\n".join([
+        f"{'👤' if m['role'] == 'user' else '🤖'} {m['text']}".strip()
+        for m in dialog if 'role' in m and 'text' in m
+    ])
 
 def train_on_bad_dialogs():
     log_to_file("🚫 Старт навчання на BAD діалогах...")
@@ -66,8 +68,10 @@ def train_on_bad_dialogs():
                 continue
             try:
                 obj = json.loads(line)
-                if "text" in obj:
-                    chunks = split_dialog_into_chunks(obj["text"], label="bad")
+                dialog = obj.get("dialog")
+                if isinstance(dialog, list):
+                    full_text = dialog_to_text(dialog)
+                    chunks = split_dialog_into_chunks(full_text, label="bad")
                     for chunk in chunks:
                         h = sha256(chunk["text"].encode("utf-8")).hexdigest()
                         if h not in hashes_seen:
@@ -88,7 +92,7 @@ def train_on_bad_dialogs():
     embeddings = []
     new_cache = dict(cache)
 
-    for text in texts:
+    for i, text in enumerate(texts):
         h = sha256(text.encode("utf-8")).hexdigest()
         if h in cache:
             emb = cache[h]
@@ -113,7 +117,6 @@ def train_on_bad_dialogs():
         log_to_file(f"📁 Збережено чанки → {BAD_DIALOG_CHUNKS_PATH}")
     except Exception as e:
         log_to_file(f"❌ Помилка збереження чанків: {e}")
-
 
 if __name__ == "__main__":
     train_on_bad_dialogs()
